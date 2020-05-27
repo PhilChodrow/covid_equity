@@ -14,10 +14,10 @@ edufy <- function(name){
 		purrr::keep(str_detect(., 'edu'))
 	
 	if(length(out) == 0){
-		return(0)
+		return(NaN)
 	}
 	else{
-		return(out[1])
+		return(out[[1]])
 	}
 } 
 

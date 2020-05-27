@@ -1,1 +1,5 @@
 .Rproj.*
+.Rproj.user
+.DS_Store
+scrape_cht.R
+data/*
