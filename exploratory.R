@@ -2,18 +2,18 @@ library(tidyverse)
 library(rvest)
 
 SEARCH_PREFIX <- "http://www.bing.com/search?q="
-SEARCH_TERMS <- "covid grading semester policy" # review scrape_cht.R if more advanced operators are required. 
+SEARCH_TERMS  <- "covid grading semester policy" # review scrape_cht.R if more advanced operators are required. 
 
-schools <- read_csv('data/Most-Recent-Cohorts-All-Data-Elements.csv')
+schools <- read_csv('data/column_subset.csv')
 
 # basic filtering. Replicates CHT's subset commands
 
 schools <- schools %>% 
 	filter(CCBASIC >= 15,
 				 !(CCUGPROF %in% 0:4),
-				 HIGHDEG %in% 3:4,       
-				 CCSIZSET %in% 6:17,    # Eliminate graduate-only institutions
-				 !(CCBASIC %in% 24:32), # Eliminate special focus schools
+				   HIGHDEG  %in% 3:4,       
+				   CCSIZSET %in% 6:17,    # Eliminate graduate-only institutions
+				 !(CCBASIC  %in% 24:32), # Eliminate special focus schools
 				 !(CONTROL==3),         # Eliminate for-profit schools
 				 CURROPER==1) 			    # Eliminate institutions that are no longer operating
 
@@ -42,7 +42,6 @@ schools <- schools %>%
 				 search = URLencode(search))
 
 # Let's test gathering some links
-
 get_page <- function(url){
 	url %>% 
 		read_html() %>% 
@@ -51,7 +50,7 @@ get_page <- function(url){
 }
 
 test <- schools %>% 
-	head(5) %>% 
+	head(10) %>% 
 	mutate(hits = map(search, get_page)) %>% 
 	unnest(c(hits)) %>% 
 	rename(hits = `c(hits)`)
