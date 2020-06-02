@@ -5,7 +5,7 @@ This repository hosts code for studying the grading policies of American college
 ## Getting Data
 
 One of our primary data sets in this project is the [College Scorecard](https://catalog.data.gov/dataset/college-scorecard/resource/77d2e376-c5bb-46d7-a985-e214e009e36e) compiled by the US Department of Education. Instead of manually downloading the data and figuring out where to put it, we've implemented an easy-to-use function called `read_scorecard()`.
-To use it, it is necessary to open the covid_equity.Rproj in order to ensure that your working directory is appropriately handled. Then, run: 
+To use it, it is necessary to open the project `covid_equity.Rproj` in order to ensure that your working directory is appropriately handled. Then, run: 
 
 ```r
 source("R/get_data.R")
