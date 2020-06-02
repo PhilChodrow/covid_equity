@@ -1,10 +1,13 @@
 library(tidyverse)
 library(rvest)
+source("R/get_data.R")
+
 
 SEARCH_PREFIX <- "http://www.bing.com/search?q="
 SEARCH_TERMS  <- "covid grading semester policy" # review scrape_cht.R if more advanced operators are required. 
 
-schools <- read_csv('data/column_subset.csv')
+# from R/get_data.R. Retrieves the data set from the web and scores it in the data/ subdirectory, or reads it from that directory if it already exists. 
+schools <- read_scorecard() 
 
 # basic filtering. Replicates CHT's subset commands
 
@@ -23,13 +26,13 @@ schools <- schools %>%
 
 # construct urls + domains for different institutions
 schools <- schools %>% 
-	mutate(URL = tolower(URL),
-				 URL = str_replace_all(URL, ".edu.*",".edu"),
-				 URL = str_replace_all(URL, "/$",""),
+	mutate(URL      = tolower(URL),
+				 URL      = str_replace_all(URL, ".edu.*",".edu"),
+				 URL      = str_replace_all(URL, "/$",""),
 				 has_http = grepl("^http", URL),
-				 URL = ifelse(has_http, URL, paste0("http://", URL)),
-				 domain = map_chr(URL, ~str_split(.,"https*://")[[1]][[2]]),
-				 domain = str_replace_all(domain, "w+\\.|w+[1-9]\\.","")
+				 URL      = ifelse(has_http, URL, paste0("http://", URL)),
+				 domain   = map_chr(URL, ~str_split(.,"https*://")[[1]][[2]]),
+				 domain   = str_replace_all(domain, "w+\\.|w+[1-9]\\.","")
 				 ) %>% 
 	select(-has_http)
 
