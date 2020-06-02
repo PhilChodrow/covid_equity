@@ -2,5 +2,6 @@
 .Rproj.user
 .DS_Store
 scrape_cht.R
-data/Most-Recent-Cohorts-All-Data-Elements.csv
+data/*
+
 
