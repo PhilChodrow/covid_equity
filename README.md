@@ -16,5 +16,5 @@ If you're running this command for the first time, it will create a `data` direc
 
 ## Data Documentation
 
-Several documentation resources, including a data dictionary for the columns contained in the College Scorecard data, are availabl [here](https://collegescorecard.ed.gov/data/documentation/). 
+Several documentation resources, including a data dictionary for the columns contained in the College Scorecard data, are available [here](https://collegescorecard.ed.gov/data/documentation/). 
 
