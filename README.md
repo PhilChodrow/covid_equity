@@ -14,5 +14,7 @@ data <- read_scorecard()
 
 If you're running this command for the first time, it will create a `data` directory and then download the data from USDE (this might take a little while). It will then load the data into your R session. If you run the command again, it will instead load the data from the `data` directory. It is not recommended to place the `data` folder under version control, and this is enforced in the `.gitignore` file. 
 
+## Data Documentation
 
+Several documentation resources, including a data dictionary for the columns contained in the College Scorecard data, are availabl [here](https://collegescorecard.ed.gov/data/documentation/). 
 
