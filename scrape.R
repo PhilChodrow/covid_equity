@@ -42,7 +42,7 @@ schools <- schools %>%
 	mutate(search = SEARCH_PREFIX,
 				 search = paste0(search, "site:", domain, "+"),
 				 search = paste0(search, str_replace_all(SEARCH_TERMS, " ", "+")), 
-				 search = URLencode(search))
+				 search = map_chr(search, URLencode))
 
 # Let's test gathering some links
 get_page <- function(url){
