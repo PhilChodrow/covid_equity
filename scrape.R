@@ -55,7 +55,6 @@ get_page <- function(url){
 test <- schools %>% 
 	head(10) %>% 
 	mutate(hits = map(search, get_page)) %>% 
-	unnest(c(hits)) %>% 
-	rename(hits = `c(hits)`)
+	unnest(c(hits))
 
 test # seems ok! 
