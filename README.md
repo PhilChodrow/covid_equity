@@ -18,3 +18,6 @@ If you're running this command for the first time, it will create a `data` direc
 
 Several documentation resources, including a data dictionary for the columns contained in the College Scorecard data, are available [here](https://collegescorecard.ed.gov/data/documentation/). 
 
+## Software Requirements
+
+Tidyr version greater than 1.0.0 is required.
