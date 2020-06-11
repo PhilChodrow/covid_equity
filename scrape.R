@@ -48,8 +48,8 @@ schools <- schools %>%
 get_page <- function(url){
 	url %>% 
 		read_html() %>% 
-		html_nodes("cite") %>% 
-		xml_text()
+		html_nodes("h2 a") %>% # All hyperlinks immediately in an h2 tag are results
+		xml_attr("href") # Grab only the link
 }
 
 test <- schools %>% 
