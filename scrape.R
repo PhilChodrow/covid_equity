@@ -60,4 +60,17 @@ test <- schools %>%
 test # seems ok! 
 
 # from R/get_data.R. Retrieves confirmed URLs for grading policy
-grade_urls <- read_grade_urls()
+grade_urls <- read_grade_urls() %>%
+	filter(!is.na(url)) %>%
+	mutate(url      = tolower(url),
+				 url      = str_replace_all(url, ".edu.*",".edu"),
+				 url      = str_replace_all(url, "/$",""),
+				 has_http = grepl("^http", url),
+				 url      = ifelse(has_http, url, paste0("http://", url)),
+				 domain   = map_chr(url, ~str_split(.,"https*://")[[1]][[2]]),
+				 domain   = str_replace_all(domain, "w+\\.|w+[1-9]\\.","")
+	) %>% 
+	select(-has_http)
+
+# 
+school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% grade_urls$domain)
