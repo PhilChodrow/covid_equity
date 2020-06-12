@@ -62,7 +62,7 @@ test # seems ok!
 # from R/get_data.R. Retrieves confirmed URLs for grading policy
 grade_urls <- read_grade_urls() %>%
 	filter(!is.na(url)) %>%
-	mutate(url      = tolower(url),
+	mutate(url      = tolower(url), #Get matching urls
 				 url      = str_replace_all(url, ".edu.*",".edu"),
 				 url      = str_replace_all(url, "/$",""),
 				 has_http = grepl("^http", url),
@@ -72,5 +72,14 @@ grade_urls <- read_grade_urls() %>%
 	) %>% 
 	select(-has_http)
 
-# 
+# Collect schools from search list that have reference pages in grade_urls
 school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% grade_urls$domain)
+
+school_urls <- school_urls %>%
+	mutate(hits = map(search, get_page)) %>%
+	unnest(c(hits))
+
+# List of colleges that the correct page is in the collected hits
+grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
+
+# Next step: Collect top 10 bing results to compare instead of however they are collected now
