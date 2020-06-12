@@ -19,3 +19,10 @@ read_scorecard <- function(){
 		return(df)
 	} 
 }
+
+# For getting the list of schools with confirmed URLS
+read_grade_urls <- function(){
+	print(paste("Reading urls for confirmed grading policies"))
+	df <- read_csv("data/gradePolicyURLs.csv")
+	return(df)
+}

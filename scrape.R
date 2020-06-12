@@ -58,3 +58,6 @@ test <- schools %>%
 	unnest(c(hits))
 
 test # seems ok! 
+
+# from R/get_data.R. Retrieves confirmed URLs for grading policy
+grade_urls <- read_grade_urls()
