@@ -4,7 +4,7 @@ source("R/get_data.R")
 
 
 SEARCH_PREFIX <- "http://www.bing.com/search?q="
-SEARCH_TERMS  <- "covid grading semester policy" # review scrape_cht.R if more advanced operators are required. 
+SEARCH_TERMS  <- "covid coronavirus spring 2020 grading policy undergraduate academic" # review scrape_cht.R if more advanced operators are required. 
 
 # from R/get_data.R. Retrieves the data set from the web and scores it in the data/ subdirectory, or reads it from that directory if it already exists. 
 schools <- read_scorecard() 
@@ -61,7 +61,7 @@ test # seems ok!
 
 # from R/get_data.R. Retrieves confirmed URLs for grading policy
 grade_urls <- read_grade_urls() %>%
-	filter(!is.na(url)) %>%
+	filter(!is.na(grades_url), grades_url != "N/A") %>%
 	mutate(url      = tolower(url), #Get matching urls
 				 url      = str_replace_all(url, ".edu.*",".edu"),
 				 url      = str_replace_all(url, "/$",""),
@@ -79,7 +79,7 @@ school_urls <- school_urls %>%
 	mutate(hits = map(search, get_page)) %>%
 	unnest(c(hits))
 
-# List of colleges that the correct page is in the collected hits
+# List of colleges that the correct page is in the collected hits (26/44)
 grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
 
 # Next step: Collect top 10 bing results to compare instead of however they are collected now
