@@ -1,5 +1,7 @@
 library(tidyverse)
 library(rvest)
+library(tidytext)
+library(RCurl)
 source("R/get_data.R")
 
 
@@ -14,8 +16,8 @@ schools <- read_scorecard()
 schools <- schools %>% 
 	filter(CCBASIC >= 15,
 				 !(CCUGPROF %in% 0:4),
-				   HIGHDEG  %in% 3:4,       
-				   CCSIZSET %in% 6:17,    # Eliminate graduate-only institutions
+				 HIGHDEG  %in% 3:4,       
+				 CCSIZSET %in% 6:17,    # Eliminate graduate-only institutions
 				 !(CCBASIC  %in% 24:32), # Eliminate special focus schools
 				 !(CONTROL==3),         # Eliminate for-profit schools
 				 CURROPER==1) 			    # Eliminate institutions that are no longer operating
@@ -33,7 +35,7 @@ schools <- schools %>%
 				 URL      = ifelse(has_http, URL, paste0("http://", URL)),
 				 domain   = map_chr(URL, ~str_split(.,"https*://")[[1]][[2]]),
 				 domain   = str_replace_all(domain, "w+\\.|w+[1-9]\\.","")
-				 ) %>% 
+	) %>% 
 	select(-has_http)
 
 # construct search URLS
@@ -77,9 +79,61 @@ school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% g
 
 school_urls <- school_urls %>%
 	mutate(hits = map(search, get_page)) %>%
-	unnest(c(hits))
+	unnest(c(hits)) %>%
+	mutate(exists = map(hits, url.exists)) %>%
+	filter(exists == TRUE)
 
-# List of colleges that the correct page is in the collected hits (26/44)
+# List of colleges that the correct page is in the collected hits (24/44)
 grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
 
 # Next step: Collect top 10 bing results to compare instead of however they are collected now
+
+
+
+
+
+
+
+# Ranking results by text mining
+data(stop_words)
+keywords <- strsplit(SEARCH_TERMS, " ")
+
+# Function to get text with html removed and count occurrences of key terms
+get_ksum <- function(url) {
+	print(url)
+	
+	text <- url %>%
+		read_html() %>%
+		html_text() %>%
+		str_replace_all("\n", " ")
+	
+	text_df <- tibble(text = text) %>%
+		unnest_tokens(word, text) %>%
+		anti_join(stop_words) %>%
+		count(word, sort = TRUE)
+	
+	# Counting occurrences of each word in keywords
+	counts <- lapply(keywords, function(x) {
+		index <- match(x, text_df[[1]])
+		return(text_df[[2]][index])
+	}) %>%
+		unlist()
+	
+	return(sum(counts, na.rm = TRUE))
+}
+
+# Sum keywords
+school_urls <- school_urls %>%
+	select(INSTNM, domain, hits) %>%
+	mutate(keyword_sum = unlist(map(hits, get_ksum)))
+
+# Rank by group where group is school (group by domain because school names are not unique)
+school_urls <- school_urls %>%
+	group_by(domain) %>%
+	mutate(rank = rank(desc(keyword_sum), ties.method = "first"))
+
+# Sort by rank
+school_urls <- arrange(school_urls, INSTNM, rank)
+
+# With ranks displayed
+school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
