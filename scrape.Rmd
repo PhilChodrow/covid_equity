@@ -1,0 +1,171 @@
+---
+title: "Scraping Websites"
+output: html_document
+---
+
+The libraries currently in use in scrape.R are as follows:
+
+```{r, message = FALSE}
+library(tidyverse)
+library(rvest)
+library(tidytext)
+library(RCurl)
+source("R/get_data.R")
+```
+
+I have added `tidytext` for manipulation of the text on the resulting webpages. `RCurl` contains a useful function to check if a url exists, as, previously, some of the results would lead to 404 errors.
+
+```{r, include = FALSE}
+SEARCH_PREFIX <- "http://www.bing.com/search?q="
+SEARCH_TERMS  <- "covid coronavirus spring 2020 grading policy undergraduate academic" # review scrape_cht.R if more advanced operators are required. 
+
+# from R/get_data.R. Retrieves the data set from the web and scores it in the data/ subdirectory, or reads it from that directory if it already exists. 
+schools <- read_scorecard() 
+
+# basic filtering. Replicates CHT's subset commands
+
+schools <- schools %>% 
+	filter(CCBASIC >= 15,
+				 !(CCUGPROF %in% 0:4),
+				 HIGHDEG  %in% 3:4,       
+				 CCSIZSET %in% 6:17,    # Eliminate graduate-only institutions
+				 !(CCBASIC  %in% 24:32), # Eliminate special focus schools
+				 !(CONTROL==3),         # Eliminate for-profit schools
+				 CURROPER==1) 			    # Eliminate institutions that are no longer operating
+
+# clean out columns we don't need anymore
+schools <- schools %>% 
+	select(INSTNM, URL = INSTURL)
+
+# construct urls + domains for different institutions
+schools <- schools %>% 
+	mutate(URL      = tolower(URL),
+				 URL      = str_replace_all(URL, ".edu.*",".edu"),
+				 URL      = str_replace_all(URL, "/$",""),
+				 has_http = grepl("^http", URL),
+				 URL      = ifelse(has_http, URL, paste0("http://", URL)),
+				 domain   = map_chr(URL, ~str_split(.,"https*://")[[1]][[2]]),
+				 domain   = str_replace_all(domain, "w+\\.|w+[1-9]\\.","")
+	) %>% 
+	select(-has_http)
+
+# construct search URLS
+
+schools <- schools %>% 
+	mutate(search = SEARCH_PREFIX,
+				 search = paste0(search, "site:", domain, "+"),
+				 search = paste0(search, str_replace_all(SEARCH_TERMS, " ", "+")), 
+				 search = map_chr(search, URLencode))
+
+# Let's test gathering some links
+get_page <- function(url){
+	url %>% 
+		read_html() %>% 
+		html_nodes("h2 a") %>% # All hyperlinks immediately in an h2 tag are results
+		xml_attr("href") # Grab only the link
+}
+```
+
+
+## Checking URLs
+
+The first task addressed was comparing the code's results to the confirmed webpages we have from Team Gibbons. The following code collects the info from the sheet of confirmed urls, filters out any schools without confirmed urls, and transforms the school's url to match a uniform pattern.
+
+```{r, message = FALSE, results = 'hide'}
+grade_urls <- read_grade_urls() %>%
+	filter(!is.na(grades_url), grades_url != "N/A") %>%
+	mutate(url      = tolower(url), #Get matching urls
+				 url      = str_replace_all(url, ".edu.*",".edu"),
+				 url      = str_replace_all(url, "/$",""),
+				 has_http = grepl("^http", url),
+				 url      = ifelse(has_http, url, paste0("http://", url)),
+				 domain   = map_chr(url, ~str_split(.,"https*://")[[1]][[2]]),
+				 domain   = str_replace_all(domain, "w+\\.|w+[1-9]\\.","")
+	) %>% 
+	select(-has_http)
+```
+
+Creating uniform urls allows us to compare the urls in Team Gibbons's spreadsheet and the scorecard. I then filtered out schools from the scorecard that so we have a list of schools that match the ones we have confirmed urls for.
+
+```{r}
+school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% grade_urls$domain)
+```
+
+Using this new list, we can use the `get_page` function to automatically complete the Bing searches for each school, collect all the results from the first page, and check to make sure each collected url exists.
+
+```{r}
+school_urls <- school_urls %>%
+	mutate(hits = map(search, get_page)) %>% # Complete search
+	unnest(c(hits)) %>% # Make each hit a unique item in the table
+	mutate(exists = map(hits, url.exists)) %>% # Check which urls exist
+	filter(exists == TRUE) # Keep only results that do not yield 404 errors
+```
+
+And, now that we have a list of hits from our scrape algorithm and a list of the correct pages from Team Gibbons, we can compare the results to see how many schools give the correct result on the first page.
+
+```{r}
+grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
+```
+
+Unfortunately, only 24 out of a possible 44 correct urls were found on the first page of Bing results. This means that there needs to be some kind of tweaking to the search or we'll have to grab more than just the first page of results from Bing.
+
+## Ranking Results by Text Mining
+
+The next step was ranking the results in hopes that volunteers would not have to sift through an entire page of Bing search results to find the correct page. Instead, we hope to create a ranking system that accurately determines which results are most likely to have the grading policy for the Spring 2020 semester.
+
+The first method is a simple sum of keywords found on each of the pages. The keywords I used were simply the search terms Team Gibbons found most effective. While these are likely not the best keywords to look for, I thought they would work for some preliminary testing. We may see better results if we work on finding a different set of keywords to count.
+
+```{r, message = FALSE, results = 'hide'}
+data(stop_words)
+keywords <- strsplit(SEARCH_TERMS, " ")
+
+get_ksum <- function(url) {
+	print(url)
+	
+	text <- url %>%
+		read_html() %>%
+		html_text() %>%
+		str_replace_all("\n", " ")
+	
+	text_df <- tibble(text = text) %>%
+		unnest_tokens(word, text) %>%
+		anti_join(stop_words) %>%
+		count(word, sort = TRUE)
+	
+	# Counting occurrences of each word in keywords
+	counts <- lapply(keywords, function(x) {
+		index <- match(x, text_df[[1]])
+		return(text_df[[2]][index])
+	}) %>%
+		unlist()
+	
+	return(sum(counts, na.rm = TRUE))
+}
+```
+
+The above function, given a url, sums the occurrences of the keywords and returns that number. This function is then mapped to the school list as a new variable so each hits has a number of keywords associated with it.
+
+```{r, message = FALSE, results = 'hide'}
+school_urls <- school_urls %>%
+	select(INSTNM, domain, hits) %>%
+	mutate(keyword_sum = unlist(map(hits, get_ksum)))
+```
+
+From there, the schools are ranked based on which has the highest number of keyword occurrences. A lower rank means it is more likely to be the correct page. Each school is ranked seperately from others, so each school will have a rank 1 hit which will hopefully contain the desired information.
+
+```{r}
+school_urls <- school_urls %>%
+	group_by(domain) %>%
+	mutate(rank = rank(desc(keyword_sum), ties.method = "first"))
+
+# Sort by rank
+school_urls <- arrange(school_urls, INSTNM, rank)
+```
+
+The last bit of data I collected was a list of the hits and what the ranks of the correct urls were.
+
+```{r}
+school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
+```
+
+This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was 2.292, and the median of the ranks was 2.
