@@ -4,5 +4,4 @@
 .DS_Store
 scrape_cht.R
 data/scorecard.csv
-
-
+scrape_cache/
