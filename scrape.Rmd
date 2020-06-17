@@ -15,7 +15,7 @@ source("R/get_data.R")
 
 I have added `tidytext` for manipulation of the text on the resulting webpages. `RCurl` contains a useful function to check if a url exists, as, previously, some of the results would lead to 404 errors.
 
-```{r, include = FALSE}
+```{r, include = FALSE, cache = TRUE}
 SEARCH_PREFIX <- "http://www.bing.com/search?q="
 SEARCH_TERMS  <- "covid coronavirus spring 2020 grading policy undergraduate academic" # review scrape_cht.R if more advanced operators are required. 
 
@@ -91,9 +91,13 @@ Creating uniform urls allows us to compare the urls in Team Gibbons's spreadshee
 school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% grade_urls$domain)
 ```
 
+```{r, include = FALSE}
+num_schools <- nrow(school_urls)
+```
+
 Using this new list, we can use the `get_page` function to automatically complete the Bing searches for each school, collect all the results from the first page, and check to make sure each collected url exists.
 
-```{r}
+```{r, cache = TRUE}
 school_urls <- school_urls %>%
 	mutate(hits = map(search, get_page)) %>% # Complete search
 	unnest(c(hits)) %>% # Make each hit a unique item in the table
@@ -107,7 +111,7 @@ And, now that we have a list of hits from our scrape algorithm and a list of the
 grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
 ```
 
-Unfortunately, only 24 out of a possible 44 correct urls were found on the first page of Bing results. This means that there needs to be some kind of tweaking to the search or we'll have to grab more than just the first page of results from Bing.
+Unfortunately, only `r nrow(grade_urls_in_bing)` out of a possible `r num_schools` correct urls were found on the first page of Bing results. This means that there needs to be some kind of tweaking to the search or we'll have to grab more than just the first page of results from Bing.
 
 ## Ranking Results by Text Mining
 
@@ -145,7 +149,7 @@ get_ksum <- function(url) {
 
 The above function, given a url, sums the occurrences of the keywords and returns that number. This function is then mapped to the school list as a new variable so each hits has a number of keywords associated with it.
 
-```{r, message = FALSE, results = 'hide'}
+```{r, message = FALSE, results = 'hide', cache = TRUE}
 school_urls <- school_urls %>%
 	select(INSTNM, domain, hits) %>%
 	mutate(keyword_sum = unlist(map(hits, get_ksum)))
@@ -168,4 +172,4 @@ The last bit of data I collected was a list of the hits and what the ranks of th
 school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
 ```
 
-This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was 2.292, and the median of the ranks was 2.
+This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was `r mean(school_urls_in_bing$rank)`, and the median of the ranks was `r median(school_urls_in_bing$rank)`.
