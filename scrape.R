@@ -90,7 +90,13 @@ grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
 
 
 
+# Ranking results by order
+school_order <- school_urls %>%
+	select(INSTNM, domain, hits) %>%
+	group_by(domain) %>%
+	mutate(rank = row_number(INSTNM))
 
+school_order_in_bing <- filter(school_order, hits %in% grade_urls$grades_url)
 
 
 
@@ -137,3 +143,5 @@ school_urls <- arrange(school_urls, INSTNM, rank)
 
 # With ranks displayed
 school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
+
+grade_urls_in_bing

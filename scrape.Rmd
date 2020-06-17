@@ -69,7 +69,7 @@ get_page <- function(url){
 
 ## Checking URLs
 
-The first task addressed was comparing the code's results to the confirmed webpages we have from Team Gibbons. The following code collects the info from the sheet of confirmed urls, filters out any schools without confirmed urls, and transforms the school's url to match a uniform pattern.
+The first task addressed was comparing the code's results to the confirmed webpages we have from Team Gibbons. We want to figure out how frequently the webscraper actually picks up the correct pages. The following code collects the info from the sheet of confirmed urls, filters out any schools without confirmed urls, and transforms the school's url to match a uniform pattern.
 
 ```{r, message = FALSE, results = 'hide'}
 grade_urls <- read_grade_urls() %>%
@@ -111,15 +111,28 @@ And, now that we have a list of hits from our scrape algorithm and a list of the
 grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
 ```
 
-Unfortunately, only `r nrow(grade_urls_in_bing)` out of a possible `r num_schools` correct urls were found on the first page of Bing results. This means that there needs to be some kind of tweaking to the search or we'll have to grab more than just the first page of results from Bing.
+Unfortunately, only `r nrow(grade_urls_in_bing)` out of a possible `r num_schools` correct urls were found on the first page of Bing results. This means that there needs to be some kind of tweaking to the search or we'll have to grab more than just the first page of results from Bing. It's also possible that some schools have their grading policy on multiple pages, and the webscraper grabs a correct page, but not the same one Team Gibbons found. This could be worth exploring further.
+
+Another thing to keep in mind here is that Bing tailors its search results to each user. Therefore, each search can yield different results. In testing, I saw the number of correct urls found by the scraper decrease from 25 to 24. And, in the next section, I found that the correct url changed position in the Bing search between days, which means the results, while relatively consistent, are not always the same.
 
 ## Ranking Results by Text Mining
 
 The next step was ranking the results in hopes that volunteers would not have to sift through an entire page of Bing search results to find the correct page. Instead, we hope to create a ranking system that accurately determines which results are most likely to have the grading policy for the Spring 2020 semester.
 
+```{r, include = FALSE}
+school_order <- school_urls %>%
+	select(INSTNM, domain, hits) %>%
+	group_by(domain) %>%
+	mutate(rank = row_number(INSTNM))
+
+school_order_in_bing <- filter(school_order, hits %in% grade_urls$grades_url)
+```
+
+For reference, if the rank were the order the results show up in, the average rank of the correct page would be `r mean(school_order_in_bing$rank)` and the median would be `r median(school_order_in_bing$rank)`.
+
 The first method is a simple sum of keywords found on each of the pages. The keywords I used were simply the search terms Team Gibbons found most effective. While these are likely not the best keywords to look for, I thought they would work for some preliminary testing. We may see better results if we work on finding a different set of keywords to count.
 
-```{r, message = FALSE, results = 'hide'}
+```{r, message = FALSE, results = 'hide', include = FALSE}
 data(stop_words)
 keywords <- strsplit(SEARCH_TERMS, " ")
 
@@ -147,7 +160,7 @@ get_ksum <- function(url) {
 }
 ```
 
-The above function, given a url, sums the occurrences of the keywords and returns that number. This function is then mapped to the school list as a new variable so each hits has a number of keywords associated with it.
+For this, I created a function `get_ksum` which, given a url, sums the occurrences of the keywords and returns that number. This function is then mapped to the school list as a new variable so each hits has a number of keywords associated with it.
 
 ```{r, message = FALSE, results = 'hide', cache = TRUE}
 school_urls <- school_urls %>%
@@ -173,3 +186,49 @@ school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
 ```
 
 This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was `r mean(school_urls_in_bing$rank)`, and the median of the ranks was `r median(school_urls_in_bing$rank)`.
+
+```{r, include = FALSE, cache = TRUE}
+get_kratio <- function(url) {
+	print(url)
+
+	text <- url %>%
+		read_html() %>%
+		html_text() %>%
+		str_replace_all("\n", " ")
+
+	text_df <- tibble(text = text) %>%
+		unnest_tokens(word, text) %>%
+		anti_join(stop_words) %>%
+		count(word, sort = TRUE)
+
+	total <- sum(text_df$n)
+
+	# Counting occurrences of each word in keywords
+	counts <- lapply(keywords, function(x) {
+		index <- match(x, text_df[[1]])
+		return(text_df[[2]][index])
+	}) %>%
+		unlist()
+
+	return(sum(counts, na.rm = TRUE) / total)
+}
+
+# Get keyword ratios
+school_urls <- school_urls %>%
+	select(INSTNM, domain, hits) %>%
+	mutate(keyword_rat = unlist(map(hits, get_kratio)))
+
+# Rank by group where group is school (group by domain because school names are not unique)
+school_urls <- school_urls %>%
+	group_by(domain) %>%
+	mutate(rank = rank(desc(keyword_rat), ties.method = "first"))
+
+# Sort by rank
+school_urls <- arrange(school_urls, INSTNM, rank)
+
+# With ranks displayed
+school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
+```
+
+
+I also tried ranking by ratio of keywords to non-keywords by page, but the results averaged a lower rank for the correct page. For this method, the rank of the correct page averaged `r mean(school_urls_in_bing$rank)` and had a median of `r median(school_urls_in_bing$rank)`.
