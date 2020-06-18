@@ -59,10 +59,14 @@ schools <- schools %>%
 
 # Let's test gathering some links
 get_page <- function(url){
-	url %>% 
+	url <- url %>% 
 		read_html() %>% 
 		html_nodes("h2 a") %>% # All hyperlinks immediately in an h2 tag are results
 		xml_attr("href") # Grab only the link
+	
+	Sys.sleep(3)
+	
+	return
 }
 ```
 
@@ -128,7 +132,7 @@ school_order <- school_urls %>%
 school_order_in_bing <- filter(school_order, hits %in% grade_urls$grades_url)
 ```
 
-For reference, if the rank were the order the results show up in, the average rank of the correct page would be `r mean(school_order_in_bing$rank)` and the median would be `r median(school_order_in_bing$rank)`.
+For reference, if the rank were the order the results show up in, the average rank of the correct page would be `r mean(school_order_in_bing$rank)` and the median would be `r median(school_order_in_bing$rank)`. These are obviously quite good results, but I wanted to see if they could be improved.
 
 The first method is a simple sum of keywords found on each of the pages. The keywords I used were simply the search terms Team Gibbons found most effective. While these are likely not the best keywords to look for, I thought they would work for some preliminary testing. We may see better results if we work on finding a different set of keywords to count.
 
@@ -232,3 +236,10 @@ school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
 
 
 I also tried ranking by ratio of keywords to non-keywords by page, but the results averaged a lower rank for the correct page. For this method, the rank of the correct page averaged `r mean(school_urls_in_bing$rank)` and had a median of `r median(school_urls_in_bing$rank)`.
+
+As you can see, these results of keyword ranking are not as effective as the order the results show up in the Bing search. Better choice of keywords could hypothetically improve the results, but I find it unlikely. The amount of time it would take to find keywords that improve the ranking would probably be better spent elsewhere, as the correct pagers tend to show up in the first three results anyway. In the following table of all the correct urls found, the rank is the position of the link in the Bing search results for the correct pages.
+
+```{r echo = FALSE, results = 'asis'}
+library(knitr)
+kable(school_order_in_bing)
+```

@@ -48,10 +48,14 @@ schools <- schools %>%
 
 # Let's test gathering some links
 get_page <- function(url){
-	url %>% 
+	url <- url %>% 
 		read_html() %>% 
 		html_nodes("h2 a") %>% # All hyperlinks immediately in an h2 tag are results
 		xml_attr("href") # Grab only the link
+	
+	Sys.sleep(3)
+	
+	return(url)
 }
 
 test <- schools %>% 
