@@ -243,3 +243,11 @@ As you can see, these results of keyword ranking are not as effective as the ord
 library(knitr)
 kable(school_order_in_bing)
 ```
+
+## Next Steps
+
+Currently, we are finding the correct result on the first page approximately `r round(nrow(grade_urls_in_bing)/num_schools * 100, 2)` percent of the time. For those that are found, they tend to be near the first result, which is where we want to be. It's unlikely we can improve on this result by another ranking system.
+
+The only issue we really face here is the amount of schools we're finding the correct result for. It's possible, as mentioned earlier, that some of the other ones find a correct page that's different than the one Team Gibbons found, but it's unlikely that is true for all the schools we miss. It is possible that going to the second page of Bing results will hit more correct pages, but they will be ranked much further down and thus make the crowdsourcers' job much more tedious.
+
+Possible solutions include some sort of boolean operators in the search query (such as requiring certain words) or slight tweaking of the keywords we search for.
