@@ -10,6 +10,7 @@
 
 
 
+<meta name="date" content="2020-06-19" />
 
 <title>Scraping Websites</title>
 
@@ -362,6 +363,7 @@ summary {
 
 
 <h1 class="title toc-ignore">Scraping Websites</h1>
+<h4 class="date">June 19, 2020</h4>
 
 </div>
 
@@ -377,7 +379,7 @@ source(&quot;R/get_data.R&quot;)</code></pre>
 <h2>Checking URLs</h2>
 <p>The first task addressed was comparing the code’s results to the confirmed webpages we have from Team Gibbons. We want to figure out how frequently the webscraper actually picks up the correct pages. The following code collects the info from the sheet of confirmed urls, filters out any schools without confirmed urls, and transforms the school’s url to match a uniform pattern.</p>
 <pre class="r"><code>grade_urls &lt;- read_grade_urls() %&gt;%
-    filter(!is.na(grades_url), grades_url != &quot;N/A&quot;) %&gt;%
+    filter(!is.na(grades_url)) %&gt;%
     mutate(url      = tolower(url), #Get matching urls
                  url      = str_replace_all(url, &quot;.edu.*&quot;,&quot;.edu&quot;),
                  url      = str_replace_all(url, &quot;/$&quot;,&quot;&quot;),
@@ -397,13 +399,13 @@ source(&quot;R/get_data.R&quot;)</code></pre>
     filter(exists == TRUE) # Keep only results that do not yield 404 errors</code></pre>
 <p>And, now that we have a list of hits from our scrape algorithm and a list of the correct pages from Team Gibbons, we can compare the results to see how many schools give the correct result on the first page.</p>
 <pre class="r"><code>grade_urls_in_bing &lt;- filter(grade_urls, grades_url %in% school_urls$hits)</code></pre>
-<p>Unfortunately, only 25 out of a possible 44 correct urls were found on the first page of Bing results. This means that there needs to be some kind of tweaking to the search or we’ll have to grab more than just the first page of results from Bing. It’s also possible that some schools have their grading policy on multiple pages, and the webscraper grabs a correct page, but not the same one Team Gibbons found. This could be worth exploring further.</p>
+<p>Unfortunately, only 27 out of a possible 50 correct urls were found on the first page of Bing results. This means that there needs to be some kind of tweaking to the search or we’ll have to grab more than just the first page of results from Bing. It’s also possible that some schools have their grading policy on multiple pages, and the webscraper grabs a correct page, but not the same one Team Gibbons found. This could be worth exploring further.</p>
 <p>Another thing to keep in mind here is that Bing tailors its search results to each user. Therefore, each search can yield different results. In testing, I saw the number of correct urls found by the scraper decrease from 25 to 24. And, in the next section, I found that the correct url changed position in the Bing search between days, which means the results, while relatively consistent, are not always the same.</p>
 </div>
 <div id="ranking-results-by-text-mining" class="section level2">
 <h2>Ranking Results by Text Mining</h2>
 <p>The next step was ranking the results in hopes that volunteers would not have to sift through an entire page of Bing search results to find the correct page. Instead, we hope to create a ranking system that accurately determines which results are most likely to have the grading policy for the Spring 2020 semester.</p>
-<p>For reference, if the rank were the order the results show up in, the average rank of the correct page would be 1.52 and the median would be 1. These are obviously quite good results, but I wanted to see if they could be improved.</p>
+<p>For reference, if the rank were the order the results show up in, the average rank of the correct page would be 1.48 and the median would be 1. These are obviously quite good results, but I wanted to see if they could be improved.</p>
 <p>The first method is a simple sum of keywords found on each of the pages. The keywords I used were simply the search terms Team Gibbons found most effective. While these are likely not the best keywords to look for, I thought they would work for some preliminary testing. We may see better results if we work on finding a different set of keywords to count.</p>
 <p>For this, I created a function <code>get_ksum</code> which, given a url, sums the occurrences of the keywords and returns that number. This function is then mapped to the school list as a new variable so each hits has a number of keywords associated with it.</p>
 <pre class="r"><code>school_urls &lt;- school_urls %&gt;%
@@ -418,9 +420,9 @@ source(&quot;R/get_data.R&quot;)</code></pre>
 school_urls &lt;- arrange(school_urls, INSTNM, rank)</code></pre>
 <p>The last bit of data I collected was a list of the hits and what the ranks of the correct urls were.</p>
 <pre class="r"><code>school_urls_in_bing &lt;- filter(school_urls, hits %in% grade_urls$grades_url)</code></pre>
-<p>This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was 2.6, and the median of the ranks was 2.</p>
-<p>I also tried ranking by ratio of keywords to non-keywords by page, but the results averaged a lower rank for the correct page. For this method, the rank of the correct page averaged 3.24 and had a median of 2.</p>
-<p>As you can see, these results of keyword ranking are not as effective as the order the results show up in the Bing search. Better choice of keywords could hypothetically improve the results, but I find it unlikely. The amount of time it would take to find keywords that improve the ranking would probably be better spent elsewhere, as the correct pagers tend to show up in the first three results anyway. In the following table of all the correct urls found, the rank is the position of the link in the Bing search results for the correct pages.</p>
+<p>This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was 2.85, and the median of the ranks was 2.</p>
+<p>I also tried ranking by ratio of keywords to non-keywords by page, but the results averaged a lower rank for the correct page. For this method, the rank of the correct page averaged 3 and had a median of 2.</p>
+<p>As you can see, these results of keyword ranking are not as effective as the order the results show up in the Bing search. Better choice of keywords could hypothetically improve the results, but I find it unlikely. The amount of time it would take to find keywords that improve the ranking would probably be better spent elsewhere, as the correct pagers tend to show up in the first three results anyway. In the following table of the first ten correct urls found, the rank is the position of the link in the Bing search results for the correct pages.</p>
 <table>
 <thead>
 <tr class="header">
@@ -432,16 +434,16 @@ school_urls &lt;- arrange(school_urls, INSTNM, rank)</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">Birmingham-Southern College</td>
-<td align="left">bsc.edu</td>
-<td align="left"><a href="https://www.bsc.edu/coronavirus.html" class="uri">https://www.bsc.edu/coronavirus.html</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
 <td align="left">California State University-Dominguez Hills</td>
 <td align="left">csudh.edu</td>
 <td align="left"><a href="https://www.csudh.edu/uac/covid-19-spring-2020-grading/" class="uri">https://www.csudh.edu/uac/covid-19-spring-2020-grading/</a></td>
 <td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Morehouse College</td>
+<td align="left">morehouse.edu</td>
+<td align="left"><a href="https://morehouse.edu/coronavirus-updates/faqs---coronavirus/academics-housing-faqs.html" class="uri">https://morehouse.edu/coronavirus-updates/faqs---coronavirus/academics-housing-faqs.html</a></td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td align="left">Franklin College</td>
@@ -456,22 +458,34 @@ school_urls &lt;- arrange(school_urls, INSTNM, rank)</code></pre>
 <td align="right">2</td>
 </tr>
 <tr class="odd">
-<td align="left">Dordt University</td>
-<td align="left">dordt.edu</td>
-<td align="left"><a href="https://www.dordt.edu/student-life/student-health-and-counseling-center/covid-19" class="uri">https://www.dordt.edu/student-life/student-health-and-counseling-center/covid-19</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
 <td align="left">University of Pikeville</td>
 <td align="left">upike.edu</td>
 <td align="left"><a href="https://www.upike.edu/coronavirus/" class="uri">https://www.upike.edu/coronavirus/</a></td>
 <td align="right">1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">Centenary College of Louisiana</td>
 <td align="left">centenary.edu</td>
 <td align="left"><a href="https://www.centenary.edu/directories/offices-services-directory/public-safety/covid-19-information/academic-changes/" class="uri">https://www.centenary.edu/directories/offices-services-directory/public-safety/covid-19-information/academic-changes/</a></td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Loyola University New Orleans</td>
+<td align="left">loyno.edu</td>
+<td align="left"><a href="https://faq.loyno.edu/faqs/coronavirus-faqs-students/undergraduate-passfail" class="uri">https://faq.loyno.edu/faqs/coronavirus-faqs-students/undergraduate-passfail</a></td>
 <td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">College of Our Lady of the Elms</td>
+<td align="left">elms.edu</td>
+<td align="left"><a href="https://www.elms.edu/coronavirus/" class="uri">https://www.elms.edu/coronavirus/</a></td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Salem State University</td>
+<td align="left">salemstate.edu</td>
+<td align="left"><a href="https://ask.salemstate.edu/kb/spring-2020-passno-pass-policy-faq" class="uri">https://ask.salemstate.edu/kb/spring-2020-passno-pass-policy-faq</a></td>
+<td align="right">3</td>
 </tr>
 <tr class="even">
 <td align="left">Stonehill College</td>
@@ -479,114 +493,12 @@ school_urls &lt;- arrange(school_urls, INSTNM, rank)</code></pre>
 <td align="left"><a href="https://www.stonehill.edu/news/emergencies/updates/coronavirus/for-students-and-parents/" class="uri">https://www.stonehill.edu/news/emergencies/updates/coronavirus/for-students-and-parents/</a></td>
 <td align="right">1</td>
 </tr>
-<tr class="odd">
-<td align="left">Williams College</td>
-<td align="left">williams.edu</td>
-<td align="left"><a href="https://registrar.williams.edu/reminders/spring-20-universal-pass-fail-for-undergraduates/" class="uri">https://registrar.williams.edu/reminders/spring-20-universal-pass-fail-for-undergraduates/</a></td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">Worcester State University</td>
-<td align="left">worcester.edu</td>
-<td align="left"><a href="https://www.worcester.edu/Public-Health-Information/" class="uri">https://www.worcester.edu/Public-Health-Information/</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Colgate University</td>
-<td align="left">colgate.edu</td>
-<td align="left"><a href="https://www.colgate.edu/about/offices-centers-institutes/provost-and-dean-faculty/registrars-office/spring-2020-registrar" class="uri">https://www.colgate.edu/about/offices-centers-institutes/provost-and-dean-faculty/registrars-office/spring-2020-registrar</a></td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">Roberts Wesleyan College</td>
-<td align="left">roberts.edu</td>
-<td align="left"><a href="https://www.roberts.edu/covid-19/" class="uri">https://www.roberts.edu/covid-19/</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">St. Joseph’s College-Long Island</td>
-<td align="left">sjcny.edu</td>
-<td align="left"><a href="https://www.sjcny.edu/em/corona" class="uri">https://www.sjcny.edu/em/corona</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">East Carolina University</td>
-<td align="left">ecu.edu</td>
-<td align="left"><a href="https://news.ecu.edu/2020/03/23/emergency-grading-accommodation-for-spring-2020/" class="uri">https://news.ecu.edu/2020/03/23/emergency-grading-accommodation-for-spring-2020/</a></td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Kent State University at Kent</td>
-<td align="left">kent.edu</td>
-<td align="left"><a href="https://www.kent.edu/coronavirus/grading" class="uri">https://www.kent.edu/coronavirus/grading</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Wittenberg University</td>
-<td align="left">wittenberg.edu</td>
-<td align="left"><a href="https://www.wittenberg.edu/administration/healthwellness/covid-19-academics-faqs" class="uri">https://www.wittenberg.edu/administration/healthwellness/covid-19-academics-faqs</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Lincoln University</td>
-<td align="left">lincoln.edu</td>
-<td align="left"><a href="https://www.lincoln.edu/departments/registrar" class="uri">https://www.lincoln.edu/departments/registrar</a></td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">Moravian College</td>
-<td align="left">moravian.edu</td>
-<td align="left"><a href="https://www.moravian.edu/academic-advising/all-students" class="uri">https://www.moravian.edu/academic-advising/all-students</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Susquehanna University</td>
-<td align="left">susqu.edu</td>
-<td align="left"><a href="https://www.susqu.edu/emergency/coronavirus-update/student-covid-19-faq" class="uri">https://www.susqu.edu/emergency/coronavirus-update/student-covid-19-faq</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Thiel College</td>
-<td align="left">thiel.edu</td>
-<td align="left"><a href="https://www.thiel.edu/campus_life/coronavirus-updates" class="uri">https://www.thiel.edu/campus_life/coronavirus-updates</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Waynesburg University</td>
-<td align="left">waynesburg.edu</td>
-<td align="left"><a href="https://www.waynesburg.edu/coronavirus-disease-2019-covid-19" class="uri">https://www.waynesburg.edu/coronavirus-disease-2019-covid-19</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Roger Williams University</td>
-<td align="left">rwu.edu</td>
-<td align="left"><a href="https://www.rwu.edu/node/192881/roger-williams-university-spring-2020-semester-covid-19-passno-pass-policy" class="uri">https://www.rwu.edu/node/192881/roger-williams-university-spring-2020-semester-covid-19-passno-pass-policy</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">East Texas Baptist University</td>
-<td align="left">etbu.edu</td>
-<td align="left"><a href="https://www.etbu.edu/etbu-now/coronavirus-covid-19-information" class="uri">https://www.etbu.edu/etbu-now/coronavirus-covid-19-information</a></td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Virginia Commonwealth University</td>
-<td align="left">vcu.edu</td>
-<td align="left"><a href="https://rar.vcu.edu/flexiblegradeoption/" class="uri">https://rar.vcu.edu/flexiblegradeoption/</a></td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Whitworth University-Adult Degree Programs</td>
-<td align="left">whitworth.edu</td>
-<td align="left"><a href="https://www.whitworth.edu/cms/administration/health-and-counseling-services/health-center/coronavirus-information/significant-operational-changes-march-16-2020/" class="uri">https://www.whitworth.edu/cms/administration/health-and-counseling-services/health-center/coronavirus-information/significant-operational-changes-march-16-2020/</a></td>
-<td align="right">2</td>
-</tr>
 </tbody>
 </table>
 </div>
 <div id="next-steps" class="section level2">
 <h2>Next Steps</h2>
-<p>Currently, we are finding the correct result on the first page approximately 56.82 percent of the time. For those that are found, they tend to be near the first result, which is where we want to be. It’s unlikely we can improve on this result by another ranking system.</p>
+<p>Currently, we are finding the correct result on the first page approximately 54 percent of the time. For those that are found, they tend to be near the first result, which is where we want to be. It’s unlikely we can improve on this result by another ranking system.</p>
 <p>The only issue we really face here is the amount of schools we’re finding the correct result for. It’s possible, as mentioned earlier, that some of the other ones find a correct page that’s different than the one Team Gibbons found, but it’s unlikely that is true for all the schools we miss. It is possible that going to the second page of Bing results will hit more correct pages, but they will be ranked much further down and thus make the crowdsourcers’ job much more tedious.</p>
 <p>Possible solutions include some sort of boolean operators in the search query (such as requiring certain words) or slight tweaking of the keywords we search for.</p>
 </div>

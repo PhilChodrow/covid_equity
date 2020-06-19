@@ -1,5 +1,7 @@
 ---
 title: "Scraping Websites"
+name: Josef Komissar
+date: June 19, 2020
 output: html_document
 ---
 
@@ -66,8 +68,8 @@ get_page <- function(url){
 	
 	Sys.sleep(3)
 	
-	return
-}
+	return(url)
+} 
 ```
 
 
@@ -132,7 +134,7 @@ school_order <- school_urls %>%
 school_order_in_bing <- filter(school_order, hits %in% grade_urls$grades_url)
 ```
 
-For reference, if the rank were the order the results show up in, the average rank of the correct page would be `r mean(school_order_in_bing$rank)` and the median would be `r median(school_order_in_bing$rank)`. These are obviously quite good results, but I wanted to see if they could be improved.
+For reference, if the rank were the order the results show up in, the average rank of the correct page would be `r round(mean(school_order_in_bing$rank), 2)` and the median would be `r median(school_order_in_bing$rank)`. These are obviously quite good results, but I wanted to see if they could be improved.
 
 The first method is a simple sum of keywords found on each of the pages. The keywords I used were simply the search terms Team Gibbons found most effective. While these are likely not the best keywords to look for, I thought they would work for some preliminary testing. We may see better results if we work on finding a different set of keywords to count.
 
@@ -189,7 +191,7 @@ The last bit of data I collected was a list of the hits and what the ranks of th
 school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
 ```
 
-This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was `r mean(school_urls_in_bing$rank)`, and the median of the ranks was `r median(school_urls_in_bing$rank)`.
+This is a dataset containing only the schools that got the correct result in the first page of Bing. On average, the rank of the correct page was `r round(mean(school_urls_in_bing$rank), 2)`, and the median of the ranks was `r median(school_urls_in_bing$rank)`.
 
 ```{r, include = FALSE, cache = TRUE}
 get_kratio <- function(url) {
@@ -235,13 +237,13 @@ school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
 ```
 
 
-I also tried ranking by ratio of keywords to non-keywords by page, but the results averaged a lower rank for the correct page. For this method, the rank of the correct page averaged `r mean(school_urls_in_bing$rank)` and had a median of `r median(school_urls_in_bing$rank)`.
+I also tried ranking by ratio of keywords to non-keywords by page, but the results averaged a lower rank for the correct page. For this method, the rank of the correct page averaged `r round(mean(school_urls_in_bing$rank), 2)` and had a median of `r median(school_urls_in_bing$rank)`.
 
-As you can see, these results of keyword ranking are not as effective as the order the results show up in the Bing search. Better choice of keywords could hypothetically improve the results, but I find it unlikely. The amount of time it would take to find keywords that improve the ranking would probably be better spent elsewhere, as the correct pagers tend to show up in the first three results anyway. In the following table of all the correct urls found, the rank is the position of the link in the Bing search results for the correct pages.
+As you can see, these results of keyword ranking are not as effective as the order the results show up in the Bing search. Better choice of keywords could hypothetically improve the results, but I find it unlikely. The amount of time it would take to find keywords that improve the ranking would probably be better spent elsewhere, as the correct pagers tend to show up in the first three results anyway. In the following table of the first ten correct urls found, the rank is the position of the link in the Bing search results for the correct pages.
 
 ```{r echo = FALSE, results = 'asis'}
 library(knitr)
-kable(school_order_in_bing)
+kable(school_order_in_bing[1:10, ])
 ```
 
 ## Next Steps
