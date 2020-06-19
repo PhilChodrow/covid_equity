@@ -248,8 +248,15 @@ kable(school_order_in_bing[1:10, ])
 
 ## Next Steps
 
-Currently, we are finding the correct result on the first page approximately `r round(nrow(grade_urls_in_bing)/num_schools * 100, 2)` percent of the time. For those that are found, they tend to be near the first result, which is where we want to be. It's unlikely we can improve on this result by another ranking system.
+```{r include = FALSE}
+school_prop <- nrow(grade_urls_in_bing)/num_schools
+total_schools <- nrow(schools)
+est_results <- floor(school_prop * total_schools)
+```
 
-The only issue we really face here is the amount of schools we're finding the correct result for. It's possible, as mentioned earlier, that some of the other ones find a correct page that's different than the one Team Gibbons found, but it's unlikely that is true for all the schools we miss. It is possible that going to the second page of Bing results will hit more correct pages, but they will be ranked much further down and thus make the crowdsourcers' job much more tedious.
+
+Currently, we are finding the correct result on the first page approximately `r round(school_prop * 100, 2)` percent of the time. For those that are found, they tend to be near the first result, which is where we want to be. It's unlikely we can improve on this result by another ranking system.
+
+The only issue we really face here is the amount of schools we're finding the correct result for. Given `r total_schools` schools worth of cleaned data and the proportion of correct urls we found by this method, we can conclude that we would find the correct url for only `r est_results` schools. It's possible, as mentioned earlier, that some of the other ones find a correct page that's different than the one Team Gibbons found, but it's unlikely that is true for all the schools we miss. It is possible that going to the second page of Bing results will hit more correct pages, but they will be ranked much further down and thus make the crowdsourcers' job much more tedious.
 
 Possible solutions include some sort of boolean operators in the search query (such as requiring certain words) or slight tweaking of the keywords we search for.
