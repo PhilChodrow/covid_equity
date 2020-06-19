@@ -67,7 +67,7 @@ test # seems ok!
 
 # from R/get_data.R. Retrieves confirmed URLs for grading policy
 grade_urls <- read_grade_urls() %>%
-	filter(!is.na(grades_url), grades_url != "N/A") %>%
+	filter(!is.na(grades_url)) %>%
 	mutate(url      = tolower(url), #Get matching urls
 				 url      = str_replace_all(url, ".edu.*",".edu"),
 				 url      = str_replace_all(url, "/$",""),

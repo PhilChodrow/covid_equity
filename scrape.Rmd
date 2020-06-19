@@ -77,7 +77,7 @@ The first task addressed was comparing the code's results to the confirmed webpa
 
 ```{r, message = FALSE, results = 'hide'}
 grade_urls <- read_grade_urls() %>%
-	filter(!is.na(grades_url), grades_url != "N/A") %>%
+	filter(!is.na(grades_url)) %>%
 	mutate(url      = tolower(url), #Get matching urls
 				 url      = str_replace_all(url, ".edu.*",".edu"),
 				 url      = str_replace_all(url, "/$",""),
