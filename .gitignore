@@ -5,3 +5,4 @@
 scrape_cht.R
 data/scorecard.csv
 scrape_cache/
+Diego_data_exploration.R
