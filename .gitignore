@@ -7,3 +7,7 @@ data/scorecard.csv
 scrape_cache/
 Diego_data_exploration.R
 test.R
+college_data_tibble.csv
+colleges_training_tibble.csv
+colleges_query_tibble.csv
+colleges_test_tibble.csv
