@@ -1,0 +1,180 @@
+---
+title: "Diego_findings"
+author: Diego Esparza
+output: html_document
+---
+
+#### Libraries
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ggmap)
+register_google(key = "AIzaSyDmJfAs2a8R_5JMviWUR2zVlfFVtIp4eig")
+library(sf)
+library(mapview)
+library(modelr)
+```
+
+##### Load data sets
+
+```{r, warning=FALSE, message=FALSE}
+college_data_filtered_tibble <- read_csv("college_data_filtered_tibble.csv")
+colleges_CleanYR4_tibble <- read_csv("colleges_CleanYR4_tibble.csv")
+colleges_LOW4_byState <- read_csv("colleges_LOW4_byState.csv")
+test_scores <- read_csv("test_scores.csv")
+```
+
+### Mapping
+
+The Google API key (written in the libraries section under "ggmap") is used to produce geographical maps as backgrounds for plots. A key can be created from [console.cloud.google.come](console.cloud.google.com). Each key has 100,000 free uses per month, so feel free to use this one but don't share it outside of the project or run it inside of a loop. The map background can then be assigned to mainland_map_bg with the following code:
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map <- # Google map component of background
+	get_googlemap(center = c(-95, 36), 
+	              zoom = 3, 
+	              style = "element:labels.text|visibility:off")
+mainland_map_bg <- # create background from Google map component
+	ggmap(mainland_map) + 
+	coord_fixed(xlim = c(-127, -60), 
+	            ylim = c(5, 47), 
+							ratio = 1.2)
+```
+
+For mapping purposes, I created a filtered data set from the one produced in scrape.R, only including schools with Latitude and Longitude information. Because of the adjusted x and y axes, the latitudes of the schools had to be subtracted by 10 for them to fit onto the map.
+
+```{r, warning=FALSE, message=FALSE}
+mid <- 0.3
+mainland_map_bg + 
+	geom_point(data = colleges_CleanYR4_tibble, 
+						 aes(x = LONGITUDE, y = LATMINUS, 
+						 		color = LOI_WDR_DBL, 
+						 		size = LOI_WDR_DBL)) +
+  scale_color_gradient2(midpoint = mid, 
+                        low = "green", 
+                        mid = "yellow", 
+                        high = "red", 
+                        space = "lab") + 
+	scale_size_continuous(range = c(0.3,2.5))
+
+```
+
+This map shows all of the schools in the filtered data set. Larger, redder circles represent schools with high withdrawal rates among students whose families earn less than $30,000. 
+
+Organized by state, excluding states with fewer than 4 listed schools, the average withdrawal rate for low income students looks like this:
+
+```{r, warning=FALSE, message=FALSE}
+mid <- 0.2
+mainland_map_bg +
+	geom_point(data = colleges_LOW4_byState, 
+						 aes(x = LongMinus, y = LatMinus, 
+						 		color = mean, 
+						 		size = mean)) +
+  scale_color_gradient2(midpoint = mid, 
+                        low = "green", 
+                        mid = "yellow",
+                        high = "red", 
+                        space = "lab") +
+	scale_size_continuous(range = c(1,6))
+```
+
+### Modeling
+
+I began by trying to find predictors for a high withdrawal rate among low income students. I used a data set of 60% of the schools, as it was still large and would allow for unbiased model checks on the remaining two 20%s of the data later on. In order to compare against the average price for low income students, I removed schools that did not display this information (removing 24 schools), then combined the columns indicating price for private and public schools and represented them as doubles. Removing schools without information for low income withdrawal rates eliminated an additional 147 schools. After adding an indicator variable for whether a school had a majority black students (the percent of black students at a school showed to better predict the low income withdrawal rate than the percentage of white students. The schools in the data set were clumped into two distinct groups of percentages of black students, with the 50% line dividing the two), I narrowed the data set down to those with SAT or ACT scores for Math and English/Critical Reading (all schools with one had the other, which wasn't also true for Writing scores). This eliminated another 184 schools. Going off of a chart of ACT and SAT score percentiles from [ThoughtCo](https://www.thoughtco.com/converting-act-scores-to-sat-scores-788710), I converted the scores for schools with ACT but no SAT into SAT scores according to percentile. 
+
+```{r, warning=FALSE, message=FALSE}
+ggplot() + 
+  geom_point(data = filter(test_scores, INSTNM == "High Point University"),
+             aes(x = NPT41_DBL, y = LOI_WDR_DBL),
+             color = "black",
+             size = 3) +
+  geom_point(data = test_scores,
+             aes(x = NPT41_DBL, y = LOI_WDR_DBL),
+             color = "salmon")
+```
+
+An initial plot of low income withdrawal rates against the cost for low income students showed little correlation. It seems possible that there is a negative correlation, with one major outlier High Point University circled in black.
+
+```{r, warning=FALSE, message=FALSE}
+test_scores %>% 
+  ggplot() +
+  geom_point(aes(x = log(UGDS), y = LOI_WDR_DBL),
+             color = "salmon")
+```
+
+A plot against size (the number of undergraduate degree seeking students) similarly shows little correlation.
+
+```{r, warning=FALSE, message=FALSE}
+test_scores %>%
+  ggplot(aes(x = maj_Black, y = LOI_WDR_DBL)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.5, color = "salmon", fill = "salmon")
+```
+
+A box plot of low income withdrawal rates among majority and minority black schools suggests correlation between the two variables however, the lack of data points for majority black schools adds uncertainty.
+
+The most promising predictor was to use an SAT score, or its rough ACT equivalent. A plot of Math scores against English/Critical Reading scores shows that there is little importance in which one is picked, as they're almost perfectly correlated
+. 
+```{r, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_point(data = filter(test_scores, INSTNM == "Holy Names University"),
+             aes(SATVRMID_DBL, SATMTMID_DBL),
+             color = "black",
+             size = 3) +
+  geom_point(data = filter(test_scores, SATVRMID != "NULL"),
+             aes(SATVRMID_DBL, SATMTMID_DBL),
+             color = "salmon") +
+  geom_point(data = filter(test_scores, SATVRMID == "NULL"),
+             aes(SATVRMID_DBL, SATMTMID_DBL),
+             color = "blue")
+```
+
+The dots colored blue are schools whose ACT scores were converted to SAT scores. Given the higher proportion of blue dots outside of the line, it is possible that the conversion wasn't completely accurate. The only point for which it would really matter whether Math or Critical Reading scores were chosen would be Holy Names University, circled in black.
+
+A model with the four considered predictors and log transformations on size and SAT scores, in order to normalize the two distributions.
+
+```{r, warning=FALSE, message=FALSE}
+lm_all <- 
+	lm(LOI_WDR_DBL ~ NPT41_DBL + log(UGDS) + log(SATMTMID_DBL) + maj_Black,
+		 data = test_scores)
+summary(lm_all)
+```
+
+Although an indicator for whether a school was majority black showed statistical relevance in a model by itself, it was too heavily correlated with the other variables. For example, here is the distribution of SAT scores, with the majority black schools highlighted in red:
+
+```{r, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_histogram(data = test_scores,
+                 aes(x = SATMTMID_DBL)) +
+  geom_histogram(data = filter(test_scores, maj_Black == "yes"),
+                 aes(x = SATMTMID_DBL),
+                 fill = "red")
+```
+
+This makes it difficult to determine whether a higher percentage of black students at a school is any indicator of low income dropout rates. Even in a model where an indicator for maj_Black (a school being majority black) was multiplied against the other continuous variables, the step function in R (using AIC) produced a model without this indicator, suggesting that it did not add significant information to the model. The only relationships between predictors that the model found relevant were incomprehensible in application, such as the product between the size of a school and the average tuition for low income students. 
+
+The most accurate model seemed to be one that used a school's average tuition for low income students and its SAT scores to predict low income dropout rates.
+
+```{r, warning=FALSE, message=FALSE}
+lm_price_SAT <- 
+  lm(LOI_WDR_DBL ~ NPT41_DBL + log(SATMTMID_DBL),
+     data = test_scores)
+summary(lm_price_SAT)
+```
+
+Essentially, schools with lower SAT scores tend to have somewhat larger problems with low income withdrawal rates. In addition, schools that cost more for low income students also have fewer issues with dropout rates. This factor was not as expected, as you could assume that schools that offered more financial aid would also work harder to keep low income students from withdrawing. It could just be, as indicated by SAT scores, better schools cost more, and also better retain students from dropping out. 
+
+### Further exploration
+
+##### Low Income Withdrawal Rate
+Instead of looking at withdrawal rate for low income students alone, look at the difference between the withdrawal rate for low income students and the overall withdrawal rate. Schools with high overall withdrawal rates would misleadingly also have high withdrawal rates for low income students. A plot of the two rates against each other might give ideas about how to create a third variable that represents the relationship between the two rates.
+
+##### Other rates to look at
+
+###### Net price
+Average net price compared to net price for low income students (as a predictor, instead of just net price for low income students), completion rate for one race compared to overall completion rate (at some very white schools, the completion rate for a minority group may be drawing from a very small n, would have to decide on minimum n, which could be found by multiplying UGDS_RACE (percent of students who are RACE) * UGDS (size)). 
+
+###### Completion rate
+Could compare completion rates across races, or look at non-white completion rate (could be averaged, each race being weighted by the number of students of that race, found using method above). Would also have to consider minimum n.
+
+###### Median debt / earnings
+There are median debt statistics for different demographics, as well as earnings statistics. These could be used to create a variable indicating financial situation post graduation, however the debt is divided by income bracket of the students whereas earnings are not. 
