@@ -1,0 +1,490 @@
+---
+title: "Diego_findings_2"
+author: "Diego Esparza"
+date: "6/30/2020"
+output: html_document
+---
+
+##### Libraries
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ggmap)
+register_google(key = "AIzaSyDmJfAs2a8R_5JMviWUR2zVlfFVtIp4eig")
+library(sf)
+library(mapview)
+library(modelr)
+library(car)
+library(MASS)
+library(bestNormalize)
+library(scales)
+```
+
+##### Data sets
+```{r, warning=FALSE, message=FALSE}
+colleges_training_tibble <- read_csv("colleges_training_tibble.csv")
+colleges_query_tibble <- read_csv("colleges_query_tibble.csv")
+colleges_test_tibble <- read_csv("colleges_test_tibble.csv")
+college_data_filtered_tibble <- read_csv("college_data_filtered_tibble.csv")
+training_white_by_state <- read_csv("training_white_by_state.csv")
+training_party_by_state <- read_csv("training_party_by_state.csv")
+colleges_com_by_state <- read_csv("colleges_com_by_state.csv")
+colleges_wd_by_state <- read_csv("colleges_wd_by_state.csv")
+state_mainland <- read_csv("state_mainland.csv")
+# Model sets with modified
+test_scores_2 <- read_csv("test_scores_2.csv") # Completion ratio by race, withdrawal ratio by income, tuition ratio by income...
+test_scores_3 <- read_csv("test_scores_3.csv") # test_scores_2 + SAT and adjusted ACT scores
+test_scores_4 <- read_csv("test_scores_4.csv") # test_scores_2 + admission rate data
+```
+
+#### Geographical distributions and demographics
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map <- # Google map component of background
+	get_googlemap(center = c(-95, 36), zoom = 3, style = "element:labels.text|visibility:off")
+mainland_map_bg <- # create background from Google map component
+	ggmap(mainland_map) + 
+	coord_fixed(xlim = c(-127, -60), ylim = c(5, 47), 
+							ratio = 1.2)
+```
+
+##### Policitcal party by state
+Although state political party did not show to be very highly correlated with other variables (more indicative may have been the political leanings of the school's county), here is a map of political leainings by state for reference, data retrieved from a 2017 Gallop poll.
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map_bg +
+  geom_point(data = training_party_by_state,
+             aes(x = longminus, 
+                 y = latminus,
+                 color = Party_cat),
+             size = 2,
+  					 show.legend = FALSE) +
+  scale_color_manual(values = c('one' = 'blue', 'two' = 'lightblue', 'three' = 'white',
+                                'four' = 'pink', 'five' = 'red', 'NA' = 'green')) +
+	ggtitle("Political Party by State")
+```
+
+##### Maps of percentages and total counts of white and black students
+
+Dot color represents the percent of white students, where darker dots represent higher percentages. From the map, you can see higher concentrations of white students in the northeast and northwest, and lower concentrations in the south. 
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map_bg +
+  geom_point(data = training_white_by_state,
+             aes(x = longminus, 
+                 y = latminus, 
+                 color = mean_white,
+                 size = tot_white)) +
+  scale_color_gradient(high = "blue", low = "white") +
+	ggtitle("Count and Percentage of \nWhite Students by State") +
+	labs(size = "White Student \nCount",
+			 color = "White Student \nPercentage")
+```
+
+Here is the map again, where instead dot sizes represent the standard deviation of the percent of white students at a school, to give an idea of levels of integration. Larger dots, as seen in the southeast, represent lower levels of integration.
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map_bg +
+  geom_point(data = training_white_by_state,
+             aes(x = longminus, 
+                 y = latminus, 
+                 color = mean_white,
+                 size = sd_white)) +
+  scale_color_gradient(high = "blue", low = "white") +
+	ggtitle("Count and Distribution of \nWhite Students by State") +
+	labs(size = "SD White \nStudents",
+			 color = "White Student \nPercentage")
+```
+
+Here is the map with dot size representing number of students for black students. Here, we
+see the highest concentrations of black students in the southeast and midatlantic, with the highest total numbers in Texas, Florida and the Northeast.
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map_bg +
+  geom_point(data = training_white_by_state,
+             aes(x = longminus, 
+                 y = latminus, 
+                 color = mean_black,
+                 size = tot_black)) +
+  scale_color_gradient(high = "blue", low = "white") +
+	ggtitle("Count and Percentage of \nBlack Students by State") +
+	labs(color = "Black Student \nPercentage",
+			 size = "Black Student \nCount")
+```
+
+And we see the lowest levels of integration in the southeast.
+```{r, warning=FALSE, message=FALSE}
+mainland_map_bg +
+  geom_point(data = training_white_by_state,
+             aes(x = longminus, 
+                 y = latminus, 
+                 color = mean_black,
+                 size = sd_black)) +
+  scale_color_gradient(high = "blue", low = "white") +
+	ggtitle("Count and Distribution of \nBlack Students by State") +
+	labs(color = "Black Student \nPercentage",
+			 size = "SD Black \nStudent")
+```
+
+##### Map of completion ratio by race
+This map presents the ratio of completion rates for non-white and white students. The overall completion rate and completion rates for white students were provided, and the completion rate for nonwhite students X was calculated with the completion rate for white students (CW), the overall completion rate (CO), and the percentage of white students at a school (PW) by 
+$X = (CO - CW * PW) / (1 - PW)$. Redder circles represent lower completion ratios for non-white students, and circle size represents the total number of nonwhite students in that state. 
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map_bg +
+  geom_point(data = colleges_com_by_state,
+             aes(x = longminus, 
+                 y = latminus, 
+                 color = mean, 
+                 size = tot_nw)) +
+  scale_color_gradient2(midpoint = 1, 
+                        high = "green", 
+                        mid = "yellow", 
+                        low = "red") +
+	ggtitle("Completion Ratio of \nNon White Students to White Students") +
+	labs(size = "Non White \nCount",
+			 color = "Completion Ratio \nNon White:White")
+```
+
+Here is a chart comparing the completion rates for whites and nonwhites at different schools, with lighter shading representing higher concentrations of white students. The yellow circles represent majority black schools and the red circles represent schools with fewer than 50 white students. It seems that higher concentrations of white students at a school correlate with lower completion rates for non white students in comparison to the completion rates of their white peers. A bit concerning was the green circle, representing Bellevue University. It seems that the 0% completion rate was a misunderstanding of a Google search result and the school's actual completion rate was higher. This could call into question the legitimacy of other portions of the data set.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_point(data = filter(test_scores_2, INSTNM == "Bellevue University"),
+             mapping = aes(x = COM_WH_DBL,
+                           y = COM_NW_DBL),
+             color = "green",
+             size = 3) +
+  geom_point(data = filter(test_scores_2, UGDS_WHITE * UGDS < 50),
+             mapping = aes(x = COM_WH_DBL,
+                           y = COM_NW_DBL),
+             color = "red",
+             size = 3.3) +
+  geom_point(data = filter(test_scores_2, majBlack == "yes"),
+             mapping = aes(x = COM_WH_DBL,
+                           y = COM_NW_DBL),
+             color = "yellow",
+             size = 3) +
+  geom_point(data = test_scores_2,
+             mapping = aes(x = COM_WH_DBL, 
+                           y = COM_NW_DBL, 
+                           color = UGDS_WHITE)) +
+  geom_abline(intercept = 0, slope = 1, 
+              linetype = "dashed", color = "red") +
+	ggtitle("Non White Students Are Completing College \nat Much Lower Rates than White Peers") +
+	labs(x = "White Student Completion Rate", 
+			 y = "Non White Student Completion Rate",
+			 color = "Percent \nWhite Students")
+```
+
+##### Map of withdrawal ratio by income
+This map presents the ratio of withdrawal rates, comparing low income students (<30k) and high income students (>75k). Redder circles represent higher withdrawal rates for low income students compared to the withdrawal rates of high income students. Dot size represents the total number of Title IV low income students. The first map has a color scale midpoint at 1 to show how much higher the withdrawal rate is for low income students. It seems that the withdrawal rates are even more uneven in states with fewer Title IV students.
+
+```{r, warning=FALSE, message=FALSE}
+mainland_map_bg +
+  geom_point(data = colleges_wd_by_state,
+             aes(x = longminus, 
+                 y = latminus,
+                 color = mean,
+                 size = tot_41)) +
+  scale_color_gradient2(midpoint = 1,
+                        high = "red",
+                        mid = "yellow",
+                        low = "green") +
+	ggtitle("Withdrawal Ratio of \nLow Income to High Income Students") +
+	labs(color = "Withdrawal Ratio \n<30k:>75k",
+			 size = "<30k Student \nCount")
+```
+
+Here is the same map with a more centered mid point to more easily see the differences between states.
+
+```{r, warning=FALSE, message=FALSE}
+mid <- mean(colleges_wd_by_state$mean)
+mainland_map_bg +
+  geom_point(data = colleges_wd_by_state,
+             aes(x = longminus, 
+                 y = latminus,
+                 color = mean,
+                 size = tot_41)) +
+  scale_color_gradient2(midpoint = mid,
+                        high = "red",
+                        mid = "yellow",
+                        low = "green") +
+	ggtitle("Withdrawal Ratio of \nLow Income to High Income Students") +
+	labs(color = "Withdrawal Ratio \n<30k:>75k",
+			 size = "<30k Student \nCount")
+```
+
+Here is a chart comparing withdrawal rates for low income and high income students, with coloring to represent the completion ratio discussed above. Redder circles represent lower completion rates for non white students. Although the two variables did not seem particularly correlated when plotted against each other, it seems that for schools with higher overall withdrawal rates (to the right of the red dotted line), schools with higher relative withdrawal rates for low income students also have lower relative completion rates for non white students. Blue dots represent completion ratios above 1.5.
+
+```{r, warning=FALSE, message=FALSE}
+mid <- quantile(test_scores_2$COM_RATIO, 0.2, na.rm = TRUE)
+ggplot() +
+  geom_point(data = filter(test_scores_2, COM_RATIO < 1.5),
+             mapping = aes(x = LO_WD_DBL,
+                           y = HI_WD_DBL,
+                           color = COM_RATIO),
+             size = 1,
+             alpha = 0.75) +
+  geom_point(data = filter(test_scores_2, COM_RATIO > 1.5),
+             mapping = aes(x = LO_WD_DBL,
+                           y = HI_WD_DBL),
+             size = 1,
+             color = "blue") +
+  geom_abline(intercept = 0, slope = 1,
+         linetype = 'dashed') +
+  scale_color_gradient2(midpoint = mid, 
+                        low = "red", 
+                        mid = "yellow",
+                        high = "green", 
+                        space = "lab") +
+	geom_abline(intercept = 1, slope = -3, 
+							linetype = 'dotted', color = 'red', alpha = 0.5) +
+	ggtitle("Low Income Students are \nWithdrawing at Much Higher Rates") +
+	labs(y = "Withdrawal Rate of >75k",
+			 x = "Withdrawal Rate of <30k",
+			 color = "Completion Ratio: \nNon White to White")
+```
+
+##### Tuition paid based on income
+The following chart compares the percentage of tuition paid by low income students (<30k) and the percentage of tuition paid by high income students (75k-100k). The bars represent the mean portion paid for low income students (and the SE bounds of those means), for schools where high income students pay more than double the average amount and schools where they pay less than double. It is very surprising that low income students pay a lower percentage of the average tuition at cheaper schools. The relationship is not quite linear but, as you would expect, the schools that charge high income students more also charge lower income students less. One interesting thing to note, however, is that for schools where high income students pay less than double the average amount, the price of a school (more expensive schools in darker colors) does not correlate with the percentage of tuition paid by low income students. There was not sufficient data on the number of students within each income bracket (just for students that qualify for Title IV), otherwise an average price could have been calculated for students earning 75k+. 
+
+```{r, warning=FALSE, message=FALSE}
+top <- 
+  test_scores_2 %>% 
+  filter(frac_44_4 > 2)
+mean_top <-
+  top$frac_41_4 %>% 
+  mean()
+se_top <- 
+  sd(top$frac_41_4) /
+  nrow(top)^0.5
+bottom <- 
+  test_scores_2 %>% 
+  filter(frac_44_4 <= 2)
+mean_bottom <- 
+  bottom$frac_41_4 %>% 
+  mean()
+se_bottom <- 
+  sd(bottom$frac_41_4) /
+  nrow(bottom)^0.5
+
+ggplot() +
+  geom_point(data = test_scores_2,
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                           y = NPT44_DBL / NPT4_DBL,
+                           color = NPT4_DBL),
+             size = 2.5) +
+	scale_color_gradient(high = 'black', low = 'steelblue1') +
+  scale_y_continuous(trans = 'log10') +
+  geom_segment(aes(x = mean_top, y = 2, 
+                   xend = mean_top, yend = Inf),
+               color = "darkblue") +
+  geom_segment(aes(x = mean_top + se_top, y = 2, 
+                   xend = mean_top + se_top, yend = Inf),
+               color = "red",
+               linetype = "dashed") +
+  geom_segment(aes(x = mean_top - se_top, y = 2, 
+                   xend = mean_top - se_top, yend = Inf),
+               color = "red",
+               linetype = "dashed") +
+  geom_segment(aes(x = mean_bottom, y = 0, 
+                   xend = mean_bottom, yend = 2),
+               color = "lightblue") +
+  geom_segment(aes(x = mean_bottom + se_bottom, y = 0, 
+                   xend = mean_bottom + se_bottom, yend = 2),
+               color = "red",
+               linetype = "dashed") +
+  geom_segment(aes(x = mean_bottom - se_bottom, y = 0, 
+                   xend = mean_bottom - se_bottom, yend = 2),
+               color = "red",
+               linetype = "dashed") +
+	ggtitle("Cheaper Schools are Charging \nLow Income Students a Lower Percentage") +
+	labs(x = "Percent Price Paid by <30k",
+			 y = "Percent Price Paid by 75-100k",
+			 color = "Price")
+```
+
+At majority black schools, highlighted in green, low income students paid much closer to 100% of the average tuition. This is possibly an indication that these schools have a higher percentage of low income students. These schools also tended towards being less expensive. After filtering down the data to majority black schools with information on the price paid by students with incomes higher than 100k, which incidentally only included public schools among the 17 total schools, a plot of the percentages paid by low income and high income students produced a shape very similar to the one seen below in green, with a cluster of schools charging low income students around 90% of the average tuition and a few points up and to the left where higher income students pay more and lower income students pay less.
+
+```{r, warning=FALSE, message=FALSE}
+majBlack <- 
+  test_scores_2 %>% 
+  filter(majBlack == "yes")
+mean_Black <-
+  majBlack$frac_41_4 %>% 
+  mean()
+se_Black <- 
+  sd(majBlack$frac_41_4) /
+  nrow(majBlack)^0.5
+mean_all <- 
+	test_scores_2$frac_41_4 %>% 
+	mean()
+se_all <- 
+	sd(test_scores_2$frac_41_4) /
+  nrow(test_scores_2)^0.5
+
+ggplot() +
+  geom_point(data = test_scores_2,
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                           y = NPT44_DBL / NPT4_DBL,
+                           color = NPT4_DBL),
+             size = 2.5) +
+  geom_point(data = filter(test_scores_2, majBlack == "yes"),
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                           y = NPT44_DBL / NPT4_DBL),
+             color = "green",
+             size = 0.5) +
+	geom_vline(xintercept = mean_Black,
+						 color = 'green',
+						 linetype = 'solid') +
+  geom_vline(xintercept = mean_Black + se_Black,
+               color = "red",
+               linetype = "dashed") +
+  geom_vline(xintercept = mean_Black - se_Black,
+               color = "red",
+               linetype = "dashed") +
+	geom_vline(xintercept = mean_all,
+						 color = 'green',
+						 linetype = 'solid') +
+  geom_vline(xintercept = mean_all + se_all,
+               color = "red",
+               linetype = "dashed") +
+  geom_vline(xintercept = mean_all - se_all,
+               color = "red",
+               linetype = "dashed") +
+  scale_color_gradient(high = 'black', low = 'steelblue1') +
+  scale_y_continuous(trans = 'log10') +
+	ggtitle("Why are Majority Black Schools Charging \nLow Income Students a Higher Percentage?")
+```
+
+Although the percentages of tuition paid by different income brackets did not differ very much across regions, there were some states that notably dominated sections of the plot. Of the 13 schools where high income students paid more than double the average amount, 10 were located in either New York (black) or California (white). The state with the lowest average percent of price paid by low income students was Maryland (red). Its three schools that went against that trend were all majority black schools (yellow).
+
+```{r, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_point(data = test_scores_2,
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                           y = NPT44_DBL / NPT4_DBL,
+                           color = NPT4_DBL),
+             size = 2.5) +
+  geom_point(data = filter(test_scores_2, ST_FIPS == 24 & majBlack == 'yes'),
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                           y = NPT44_DBL / NPT4_DBL),
+             color = 'yellow',
+             size = 2.5) +
+  geom_point(data = filter(test_scores_2, 
+                           ST_FIPS == 6 &
+                           NPT44_DBL/NPT4_DBL > 2), #CAL
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                           y = NPT44_DBL / NPT4_DBL),
+             color = "white",
+             size = 1) +
+  geom_point(data = filter(test_scores_2, 
+                 ST_FIPS == 36 &
+                   NPT44_DBL/NPT4_DBL > 2), #NY
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                 y = NPT44_DBL / NPT4_DBL),
+             color = "black",
+             size = 1) +
+  geom_point(data = filter(test_scores_2, ST_FIPS == 24), #MD
+             mapping = aes(x = NPT41_DBL / NPT4_DBL,
+                           y = NPT44_DBL / NPT4_DBL),
+             color = "red",
+             size = 1) +
+  scale_y_continuous(trans = 'log10') +
+  scale_color_gradient(high = 'black', low = 'steelblue1') +
+	ggtitle("New York, California and Maryland \nPricing Methods Stand Out") +
+	labs(x = "Percent Tuition Paid by <30k",
+			 y = "Percent Tuition Paid by 75-100k",
+			 color = "Price")
+```
+
+##### Correlating variables
+
+###### Completion rate of non white students and withdrawal rate of low income students
+There was no clear correlation between the completion ratio of non white students and the withdrawal rate of low income students. In the plot above showing withdrawal rates between income brackets, however, it was mentioned that above a certain withdrawal rate, there may begin to be a correlation between the withdrawal rate of low income students and the completion rate of non white students. This plot only takes those points with higher withdrawal rates (to the right of the dotted line in the plot above, intercept 1 and slope -3). It suggests that lower completion rates for non white students correspond with high withdrawal rates for low income students. It is far from conclusive, however, and it is likely that a few high leverage points are heavily influencing the plot.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(data = filter(test_scores_2, COM_RATIO < 2 & HI_WD_DBL > 1.4 - 4 * LO_WD_DBL),
+       mapping = aes(x = COM_RATIO, y = WD_RATIO)) +
+  geom_point(data = filter(test_scores_2, COM_RATIO < 2 & (HI_WD_DBL > 1 - 3 * LO_WD_DBL)), #eliminates two points
+             mapping = aes(x = COM_RATIO, y = WD_RATIO)) +
+  coord_flip() +
+  geom_smooth(method = 'lm') +
+	ggtitle("Do Schools with High Withdrawal \nRates House Larger Equity Issues?") +
+	labs(x = "Withdrawal Ratio: <30k to 75-100k", y = "Completion Ratio: Non White to White")
+```
+
+##### Percentage of average tuition paid by low income students and completion rate of non white students
+There was likewise no clear correlation between the percentage of tuition paid by low income students and their withdrawal rates in comparison with high income students. There may, however, be a slight correlation between the percentage of tuition paid by low income students and the completion ratio of non white students. As the correlation is negative, it is possible that schools offering less financial aid have issues of equity lower on their list of priorities, resulting in lower completion rates for non white students. Or, instead, this apparent correlation could easily be coming out of the fact that there are fewer data points for schools where low income students pay less than half of the average price.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(data = filter(test_scores_2, COM_RATIO < 2),
+       mapping = aes(x = frac_41_44, y = COM_RATIO, color = NPT4_DBL)) +
+	scale_color_gradient(high = "black", low = "steelblue1") +
+  geom_point(size = 0.75) +
+  geom_smooth(method = 'lm') +
+	ggtitle("Do the Same Schools Fail to Service \nLow Income and Non White Students?") +
+	labs(x = "Percent Tuition Paid by <30k", 
+			 y = "Completion Ratio: Non White to White",
+			 color = "Price")
+```
+
+A model using the average price and the portion of the price paid by low income students to predict the completion ratio of non white students, although poor at predicting the completion ratio, did find both variables statistically significant.
+
+```{r, warning=FALSE, message=FALSE}
+lm_1 <- 
+  lm(COM_RATIO ~ frac_41_44 + NPT4_DBL, data = filter(test_scores_2, COM_RATIO < 2))
+summary(lm_1)
+```
+
+##### Admission rates and fraction of total price paid by low income students
+The admission rate of a school was generally poor at predicting any of the other variables except for the percentage of tuition paid by low income students. It seems that there are a cluster of highly selective schools where low income students don't pay more than the minimum percentage they would pay at the least selective schools. This correlation is emphasized by the higher prices of the more selective schools. While, logically, these higher prices should be an factor in low income students paying a smaller portion, according to the plot we saw before comparing prices to portion paid by low income students, these selective schools go against the trend in charging them a smaller percentage.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(data = test_scores_4,
+       mapping = aes(x = ADM_DBL, y = frac_41_4)) +
+  geom_point(aes(color = NPT4_DBL)) +
+	scale_color_gradient(high = 'black', low = 'steelblue1') +
+  geom_smooth(method = 'lm') +
+	geom_vline(xintercept = .35,
+						 linetype = 'dotted',
+						 color = 'red') +
+	ggtitle("Selective Schools Charge Lower Income Students Less") +
+	labs(y = "Percent of Average Paid by <30k", 
+			 x = "Admission Rate",
+			 color = "Price")
+
+```
+Sure enough, the more selective schools proved to be those in the chart above that went against the correlation between higher prices and low income students paying a higher percentage. Removing the schools that were more selective than 35%, which seemed to be about the line where a lot of schools begin charging low income students the normal amount, the relationship seems a lot more linear than in the chart before. In yellow are the schools to be removed, with the charts before and after.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_point(data = filter(test_scores_4, ADM_DBL <= 0.3),
+             aes(x = NPT41_DBL / NPT4_DBL,
+                 y = NPT44_DBL / NPT4_DBL),
+             color = 'yellow',
+             size = 2.5) +
+  geom_point(data = test_scores_4,
+             aes(x = NPT41_DBL / NPT4_DBL,
+                 y = NPT44_DBL / NPT4_DBL,
+                 color = NPT4_DBL)) +
+  scale_color_gradient(high = 'black', low = 'steelblue1') +
+  scale_y_continuous(trans = 'log10') +
+	ggtitle("Selective Schools Went Against Correlation") +
+		labs(y = "Percent of Average Paid by 75-100k", 
+			 x = "Percent of Average Paid by <30k",
+			 color = "Net Price")
+
+ggplot(data = filter(test_scores_4, ADM_DBL > 0.3),
+       aes(x = NPT41_DBL / NPT4_DBL,
+           y = NPT44_DBL / NPT4_DBL)) +
+  geom_point(aes(color = NPT4_DBL)) +
+  geom_smooth(method = 'lm') +
+  scale_color_gradient(high = 'black', low = 'steelblue1') +
+  scale_y_continuous(trans = 'log10') +
+	ggtitle("Among Less Selective, Tuition Paid by \nIncome Brackets is Negatively Correlated") +
+	labs(y = "Percent of Average Paid by 75-100k", 
+			 x = "Percent of Average Paid by <30k",
+			 color = "Net Price")
+```
