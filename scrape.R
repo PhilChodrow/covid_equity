@@ -58,13 +58,6 @@ get_page <- function(url){
 	return(url)
 }
 
-test <- schools %>% 
-	head(10) %>% 
-	mutate(hits = map(search, get_page)) %>% 
-	unnest(c(hits))
-
-test # seems ok! 
-
 # from R/get_data.R. Retrieves confirmed URLs for grading policy
 grade_urls <- read_grade_urls() %>%
 	filter(!is.na(grades_url)) %>%
@@ -83,9 +76,7 @@ school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% g
 
 school_urls <- school_urls %>%
 	mutate(hits = map(search, get_page)) %>%
-	unnest(c(hits)) %>%
-	mutate(exists = map(hits, url.exists)) %>%
-	filter(exists == TRUE)
+	unnest(c(hits))
 
 # List of colleges that the correct page is in the collected hits (24/44)
 grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
@@ -101,51 +92,5 @@ school_order <- school_urls %>%
 	mutate(rank = row_number(INSTNM))
 
 school_order_in_bing <- filter(school_order, hits %in% grade_urls$grades_url)
-
-
-
-# Ranking results by text mining
-data(stop_words)
-keywords <- strsplit(SEARCH_TERMS, " ")
-
-# Function to get text with html removed and count occurrences of key terms
-get_ksum <- function(url) {
-	print(url)
-	
-	text <- url %>%
-		read_html() %>%
-		html_text() %>%
-		str_replace_all("\n", " ")
-	
-	text_df <- tibble(text = text) %>%
-		unnest_tokens(word, text) %>%
-		anti_join(stop_words) %>%
-		count(word, sort = TRUE)
-	
-	# Counting occurrences of each word in keywords
-	counts <- lapply(keywords, function(x) {
-		index <- match(x, text_df[[1]])
-		return(text_df[[2]][index])
-	}) %>%
-		unlist()
-	
-	return(sum(counts, na.rm = TRUE))
-}
-
-# Sum keywords
-school_urls <- school_urls %>%
-	select(INSTNM, domain, hits) %>%
-	mutate(keyword_sum = unlist(map(hits, get_ksum)))
-
-# Rank by group where group is school (group by domain because school names are not unique)
-school_urls <- school_urls %>%
-	group_by(domain) %>%
-	mutate(rank = rank(desc(keyword_sum), ties.method = "first"))
-
-# Sort by rank
-school_urls <- arrange(school_urls, INSTNM, rank)
-
-# With ranks displayed
-school_urls_in_bing <- filter(school_urls, hits %in% grade_urls$grades_url)
 
 grade_urls_in_bing
