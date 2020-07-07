@@ -3,8 +3,6 @@ library(rvest)
 library(pbmcapply)
 source("R/get_data.R")
 
-codeStart <- proc.time()
-
 SEARCH_PREFIX <- "http://www.bing.com/search?q="
 SEARCH_TERMS  <- "covid coronavirus spring 2020 grading policy undergraduate academic" # review scrape_cht.R if more advanced operators are required. 
 
@@ -74,20 +72,12 @@ grade_urls <- read_grade_urls() %>%
 # Collect schools from search list that have reference pages in grade_urls
 school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% grade_urls$domain)
 
-searchStart <- proc.time()
-
 school_urls <- school_urls %>%
 	mutate(hits = pbmclapply(school_urls$search, get_page)) %>%
 	unnest(c(hits))
 
-print(proc.time() - searchStart)
-
 # List of colleges that the correct page is in the collected hits (24/44)
 grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
-
-# Next step: Collect top 10 bing results to compare instead of however they are collected now
-
-
 
 # Ranking results by order
 school_order <- school_urls %>%
@@ -98,5 +88,3 @@ school_order <- school_urls %>%
 school_order_in_bing <- filter(school_order, hits %in% grade_urls$grades_url)
 
 grade_urls_in_bing
-
-print(proc.time() - codeStart)
