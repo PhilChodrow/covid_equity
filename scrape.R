@@ -56,6 +56,34 @@ get_page <- function(url){
 	return(url)
 }
 
+# proxy stuff
+library("httr")
+
+proxyListFile = "data/proxylist.csv"
+proxyList <- read.csv(proxyListFile, header = FALSE, sep="\t")
+names(proxyList) <- c("ip","port_http","login","password")
+
+proxyList$ip <- as.character(proxyList$ip)
+proxyList$port_http <- as.numeric(proxyList$port_http)
+proxyList$login <- as.character(proxyList$login)
+proxyList$password <- as.character(proxyList$password)
+
+getpage <- function(x){
+	sampleProxy <- proxyList[sample(1:nrow(proxyList),1),]
+	page <- content(GET(url=x, use_proxy(sampleProxy$ip, port=sampleProxy$port_http, username=sampleProxy$login, password=sampleProxy$password)))
+	
+	links <- page %>%
+		html_nodes("h2 a") %>% # All hyperlinks immediately in an h2 tag are results
+		xml_attr("href") # Grab only the link
+	
+	print(links)
+	
+	return(links)
+}
+
+
+
+
 # from R/get_data.R. Retrieves confirmed URLs for grading policy
 grade_urls <- read_grade_urls() %>%
 	filter(!is.na(grades_url)) %>%
@@ -72,12 +100,15 @@ grade_urls <- read_grade_urls() %>%
 # Collect schools from search list that have reference pages in grade_urls
 school_urls <- filter(schools, INSTNM %in% grade_urls$institution, domain %in% grade_urls$domain)
 
-school_urls <- school_urls %>%
-	mutate(hits = pbmclapply(school_urls$search, get_page)) %>%
-	unnest(c(hits))
 
-# List of colleges that the correct page is in the collected hits (24/44)
-grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
+
+
+
+
+# Get results
+school_urls <- school_urls %>%
+	mutate(hits = pbmclapply(school_urls$search, getpage)) %>%
+	unnest(c(hits))
 
 # Ranking results by order
 school_order <- school_urls %>%
@@ -85,6 +116,8 @@ school_order <- school_urls %>%
 	group_by(domain) %>%
 	mutate(rank = row_number(INSTNM))
 
-school_order_in_bing <- filter(school_order, hits %in% grade_urls$grades_url)
+school_order
+
+grade_urls_in_bing <- filter(grade_urls, grades_url %in% school_urls$hits)
 
 grade_urls_in_bing
