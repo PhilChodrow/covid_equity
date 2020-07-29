@@ -1,0 +1,55 @@
+---
+title: "Pilot Study Report"
+author: "Elisabeth, Josef, and Phil"
+date: "7/29/2020"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_depth: 1
+    toc_float: true
+    number_sections: true
+---
+
+# Purpose
+
+In this report, we will study the quality of the answers we received from Amazon Mechanical Turk crowdsourcers in our pilot study. Our primary aims are to: 
+
+1. Assess the **quality** of the answers we received. If we ran exactly the same methodology on the full list of institutions, how much reliable data would we gather? 
+2. **Make recommendations** for improving the quality of the data we gather in the large-scale study. 
+
+# Approach {.tabset}
+
+## Data Completeness
+
+A basic question: how often do we have any data at all? Possible metrics: 
+
+1. How many `NA`s do we have?
+2. For how many institutions do we have at least one answer in each question?
+
+## Presence of Consensus
+
+If we do have data, how often is there a clear consensus on the answer? Some possible metrics: 
+
+1. In which schools and questions is there full consensus among the workers?
+2. In which schools and questions is there a clear majority answer? 
+
+## Reliability of Answers
+
+We've noticed at least one case in which it appears that a worker did not even attempt to retrieve the information, and instead just clicked through the form. Can we detect this kind of behavior and discourage it? Or, at least, can we discount those answers in the analysis phase? 
+This is a future question we might take up -- does not need to be pursued in this early report. Some possible diagnostics: 
+
+1. Answer-level consistency checks. Did a worker give contradictory answers to two questions for the same school?
+2. Worker-level assessments. Worker rating; average time spent on task; comparing answers across multiple schools. 
+
+# Analysis
+
+```{r, include=FALSE}
+library(tidyverse)
+
+df <- read_csv("data/Batch_4133302_batch_results.csv")
+```
+
+The data has ```r nrow(df)``` rows. 
+
+# Discussion and Recommendations
