@@ -44,12 +44,46 @@ This is a future question we might take up -- does not need to be pursued in thi
 
 # Analysis
 
-```{r, include=FALSE}
+```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
+library(knitr)
 
 df <- read_csv("data/Batch_4133302_batch_results.csv")
 ```
 
+Here are a few things that I looked at very briefly -- feel free to modify, discard, or use. 
+
 The data has ```r nrow(df)``` rows. 
+
+```{r}
+sub <- df %>% 
+	select(LifetimeApprovalRate, AcceptTime, SubmitTime, Input.INSTNM,  contains("Answer"))
+```
+
+```{r, warning=FALSE, message=FALSE}
+
+completeness <- sub %>% 
+	group_by(Input.INSTNM) %>% 
+	summarise(across(contains("Answer"), ~mean(!is.na(.x)))) %>% 
+	summarise(across(contains("Answer"), mean)) %>% 
+	pivot_longer(contains("Answer")) %>% 
+	rename(`% Complete` = value)
+
+num_answers <- sub %>% 
+	group_by(Input.INSTNM) %>% 
+	summarise(across(contains("Answer"), 
+									 ~length(unique(na.omit(.x))))) %>% 
+	summarise(across(contains("Answer"), mean)) %>% 
+	pivot_longer(contains("Answer")) %>% 
+	rename(`Mean # Distinct Answers` = value)
+
+completeness %>% 
+	left_join(num_answers, by = c("name" = "name")) %>% 
+	rename(Question = name) %>% 
+	arrange(desc(`% Complete`)) %>% 
+	kable(digits = c(0, 2, 1))
+```
+
+
 
 # Discussion and Recommendations
