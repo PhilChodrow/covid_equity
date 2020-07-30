@@ -84,6 +84,31 @@ completeness %>%
 	kable(digits = c(0, 2, 1))
 ```
 
+## Majority
+
+How often is there a majority answer to a given question?
+
+```{r, warning=FALSE, message=FALSE}
+
+df %>% 
+	select(Input.INSTNM, contains("Answer")) %>% 
+	mutate(across(contains("Answer"), as.character)) %>% 
+	pivot_longer(contains("Answer")) %>% 
+	filter(!is.na(value), value != "cannotdetermine") %>%  # treating NA and "cannotdetermine" as the same
+	group_by(Input.INSTNM, name, value) %>% 
+	summarise(n = n()) %>% 
+	mutate(majority_exists = (max(n) > 1) &  ((max(n) / sum(n)) > .5)) %>% 
+	summarise(majority_exists = max(majority_exists)) %>% 
+	ungroup() %>% 
+	group_by(name) %>%
+	summarise(`% Majority Exists` = sum(majority_exists)/length(unique(df$Input.INSTNM))) %>% 
+	arrange(desc(`% Majority Exists`)) %>% 
+	kable(digits = 2)
+
+```
+
+
+
 (Elisabeth) Mostly I'm just trying to get a feel for working with R here, but I've created a snippet of code to explore Chad's idea of finding suspicious workers based on work time. I set the minimum time by choosing the percent, and then the code compiles a list of workers who completed the survey in less than the minimum time.
 
 ```{r, warning=FALSE, message=FALSE}
