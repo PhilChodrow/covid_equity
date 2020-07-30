@@ -84,6 +84,18 @@ completeness %>%
 	kable(digits = c(0, 2, 1))
 ```
 
+(Elisabeth) Mostly I'm just trying to get a feel for working with R here, but I've created a snippet of code to explore Chad's idea of finding suspicious workers based on work time. I set the minimum time by choosing the percent, and then the code compiles a list of workers who completed the survey in less than the minimum time.
+
+```{r, warning=FALSE, message=FALSE}
+min_time <- quantile(df$WorkTimeInSeconds, 0.25)
+sus_workers <- c()
+
+for(i in 1:nrow(df))
+  {if(df$WorkTimeInSeconds[i] < min_time)
+  {sus_workers[i] <- df$WorkerId[i]}}
+
+unique(sus_workers)
+```
 
 
 # Discussion and Recommendations
