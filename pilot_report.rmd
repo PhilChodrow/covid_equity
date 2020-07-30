@@ -97,5 +97,18 @@ for(i in 1:nrow(df))
 unique(sus_workers)
 ```
 
+(Phil): Elisabeth, this is great! I see you are already effectively navigating many of `R`'s weirdnesses, like "`<-`", and "`c()`", as well as some of my favorite functions like `quantile` and `unique`.  
 
+- **Follow-up questions**: How many total answers would we lose if we discarded the work of suspicious workers? Also, is there a more systematic way to choose the quantile? 
+- The code you wrote makes perfect sense to me. If you're interested, there are ways to make it more "idiomatic" for `R`. In particular, many functions in `R` are *vectorized* (work on an entire dataframe column at once), and so you usually don't need for-loops over rows. Here's exactly the same logic in slightly more `R`-like code. Both solutions are correct -- whether or not to follow up on the "idiomatic" ways is entirely up to you and probably will not impact work on this project.   
+
+```{r, warning = FALSE, message = FALSE}
+
+# x %>% f(y) is the same as f(x,y)
+df %>% 
+	mutate(sus = WorkTimeInSeconds < min_time) %>% # boolean column for suspicious workers
+	filter(sus) %>%                                # keep only those rows for which sus = TRUE
+	distinct(WorkerId) %>%                         # show each distinct ID once
+	kable()                                        # print it all pretty-like
+```
 # Discussion and Recommendations
