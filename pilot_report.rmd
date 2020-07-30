@@ -86,7 +86,10 @@ completeness %>%
 
 ## Majority
 
-How often is there a majority answer to a given question?
+How often is there a majority answer to a given question? In this quick analysis, we define "majority" as: 
+
+1. At least two workers agree on a question. 
+2. Any other workers have picked different answer: there is no other answer with two workers endorsing it. 
 
 ```{r, warning=FALSE, message=FALSE}
 
