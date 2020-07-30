@@ -107,8 +107,15 @@ df %>%
 	summarise(`% Majority Exists` = sum(majority_exists)/length(unique(df$Input.INSTNM))) %>% 
 	arrange(desc(`% Majority Exists`)) %>% 
 	kable(digits = 2)
-
 ```
+
+```{r}
+df %>% 
+	ggplot() + 
+	aes(x = WorkTimeInSeconds) + 
+	geom_histogram(bins = 100)
+```
+
 
 
 
