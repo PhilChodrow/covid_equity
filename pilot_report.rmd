@@ -158,6 +158,49 @@ df %>%
 	distinct(WorkerId) %>%                         # show each distinct ID once
 	kable()                                        # print it all pretty-like
 ```
+
+
+
+
+## Logical Flow
+
+Could and did the workers follow the logical flow of the questions? The logical flow was based on whether or not there was a universal policy, so we have two cases.
+
+1. The worker marked "yes" for universal. In this case, the worker did not follow the logical flow if they answered any of the questions besides what the universal policy was.
+2. The worker marked "no" for universal. In this case, the worker did not follow the logical flow if they left blank any of the questions besides universal policy or if they answered universal policy.
+
+```{r, warning=FALSE, message=FALSE, include=FALSE}
+# All points for which universal was marked yes
+# In these cases, everything else should be NA except what the policy was
+universal <- df %>%
+	select(contains("Answer.")) %>%
+	filter(Answer.universal == "yes")
+
+# All instances where universal was yes but something else was filled in
+universalWrong <- universal %>%
+	filter(!is.na(Answer.optinpolicy))
+
+# All instances where universal was marked no
+# In these cases, everything else should be answered except universal policy
+notUniversal <- df %>%
+	select(contains("Answer.")) %>%
+	filter(Answer.universal == "no")
+
+notUniversalWrong <- notUniversal %>%
+	filter(is.na(Answer.optinpolicy) | !is.na(Answer.universalpolicy))
+
+# Lengths of the above
+universalC <- nrow(universal)
+universalWrongC <- nrow(universalWrong)
+notUniversalC <- nrow(notUniversal)
+notUniversalWrongC <- nrow(notUniversalWrong)
+```
+
+In total, there were `r universalC` surveys where universal was marked as yes, and `r universalWrongC` of these did not follow the logical flow. Of the `r notUniversalC` surveys where universal was marked no, `r notUniversalWrongC` did not follow the logical flow of the survey.
+
+Given as percentages, `r round(universalWrongC / universalC, 2)` percent of those that were marked yes were done wrong, and `r round(notUniversalWrongC / notUniversalC, 2)` percent of answers marked no were done wrong. In total, `r round((universalWrongC + notUniversalWrongC) / (universalC + notUniversalC), 2)` percent of survey responses where the answerer could determine whether or not the policy was universal did not follow the logical flow of the survey.
+
+
 # Discussion and Recommendations
 
 We are going to want both a time-based cutoff and a content-based test to detect workers who are not in fact seeking out the information they are prompted for. These could be based on the logic of the question flows, for example. On the other hand, even workers who got good answers have also occasionally violated the survey logic. 
