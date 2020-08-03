@@ -116,6 +116,18 @@ df %>%
 	geom_histogram(bins = 100)
 ```
 
+## Control Flow
+
+```{r}
+num_conflicts <- df %>% 
+	group_by(Input.INSTNM, WorkerId) %>% 
+	summarise(conflict = sum((Answer.universal == "yes")*(!is.na(Answer.optinpolicy)))) %>% 
+	summarise(conflict = sum(conflict)) %>% 
+	summarise(num_conflicts = sum(conflict, na.rm = T))
+
+```
+
+There were `r num_conflicts$num_conflicts[1]` instances in which workers answered the the policy was "universal" but proceeded to answer the opt-in policy question as well. 
 
 
 
@@ -147,3 +159,15 @@ df %>%
 	kable()                                        # print it all pretty-like
 ```
 # Discussion and Recommendations
+
+We are going to want both a time-based cutoff and a content-based test to detect workers who are not in fact seeking out the information they are prompted for. These could be based on the logic of the question flows, for example. On the other hand, even workers who got good answers have also occasionally violated the survey logic. 
+
+Possibly the word "universal" is confusing, but possibly there's also issues with the conditional flow of the survey. 
+
+Possible: confusion between pass/fail and pass/no credit. 
+
+- Elisabeth: the reason we care is that pass/no credit doesn't affect GPA, unlike pass/fail. Pass/no credit is usually explicit that the results won't go into GPA, whereas pass/fail is often less explicit. So this is often not explicitly stated. Lots of schools do things like: "satisfactory/not satisfactory" which can be very difficult for a worker to calculate. Suggestion: third category, "pass/not pass," GPA impact unclear. Maybe a new question: letter-grading scheme or no? 
+
+- Josef: they don't seem to GET the logical flow of the survey. 
+
+
