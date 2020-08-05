@@ -53,6 +53,7 @@ df <- read_csv("data/Batch_4133302_batch_results.csv")
 
 Here are a few things that I looked at very briefly -- feel free to modify, discard, or use. 
 
+## Data Completeness
 The data has ```r nrow(df)``` rows. 
 
 ```{r}
@@ -109,7 +110,9 @@ df %>%
 	kable(digits = 2)
 ```
 
-## Worker Reliability based on Time Spent
+## Reliability of Answers
+
+### Worker Reliability Based on Time Spent
 
 Can we find suspicious workers based on their work time? The histogram below shows the distribution of work times. 
 
@@ -148,10 +151,10 @@ df %>%
 
 - **Follow-up questions**: How many total answers would we lose if we discarded the work of suspicious workers? Also, is there a more systematic way to choose the quantile? 
 
+The first priority here is determining how to choose the quantile, and whether we want to choose a quantile or a specific minimum time. Ideally, the histogram would give us an idea of where the minimum should be, but it's somewhat unclear. There is a spike around 45 seconds that could potentially be a good cut off time. Possibly we could identify some workers whose answers seem unreliable, and use their work times as references?
 
 
-
-## Logical Flow
+### Logical Flow
 
 Could and did the workers follow the logical flow of the questions? The logical flow was based on whether or not there was a universal policy, so we have two cases.
 
