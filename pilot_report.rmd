@@ -109,6 +109,10 @@ df %>%
 	kable(digits = 2)
 ```
 
+## Worker Reliability based on Time Spent
+
+Can we find suspicious workers based on their work time? The histogram below shows the distribution of work times. 
+
 ```{r}
 df %>% 
 	ggplot() + 
@@ -116,24 +120,11 @@ df %>%
 	geom_histogram(bins = 100)
 ```
 
-## Control Flow
-
-```{r}
-num_conflicts <- df %>% 
-	group_by(Input.INSTNM, WorkerId) %>% 
-	summarise(conflict = sum((Answer.universal == "yes")*(!is.na(Answer.optinpolicy)))) %>% 
-	summarise(conflict = sum(conflict)) %>% 
-	summarise(num_conflicts = sum(conflict, na.rm = T))
-
-```
-
-There were `r num_conflicts$num_conflicts[1]` instances in which workers answered the the policy was "universal" but proceeded to answer the opt-in policy question as well. 
-
-
-
-(Elisabeth) Mostly I'm just trying to get a feel for working with R here, but I've created a snippet of code to explore Chad's idea of finding suspicious workers based on work time. I set the minimum time by choosing the percent, and then the code compiles a list of workers who completed the survey in less than the minimum time.
+We can retrieve a list of workers who completed the survey in less than the minimum time in both of the following ways:
 
 ```{r, warning=FALSE, message=FALSE}
+# Elisabeth's first try
+
 min_time <- quantile(df$WorkTimeInSeconds, 0.25)
 sus_workers <- c()
 
@@ -144,12 +135,8 @@ for(i in 1:nrow(df))
 unique(sus_workers)
 ```
 
-(Phil): Elisabeth, this is great! I see you are already effectively navigating many of `R`'s weirdnesses, like "`<-`", and "`c()`", as well as some of my favorite functions like `quantile` and `unique`.  
-
-- **Follow-up questions**: How many total answers would we lose if we discarded the work of suspicious workers? Also, is there a more systematic way to choose the quantile? 
-- The code you wrote makes perfect sense to me. If you're interested, there are ways to make it more "idiomatic" for `R`. In particular, many functions in `R` are *vectorized* (work on an entire dataframe column at once), and so you usually don't need for-loops over rows. Here's exactly the same logic in slightly more `R`-like code. Both solutions are correct -- whether or not to follow up on the "idiomatic" ways is entirely up to you and probably will not impact work on this project.   
-
 ```{r, warning = FALSE, message = FALSE}
+# A more idiomatic to R version from Phil
 
 # x %>% f(y) is the same as f(x,y)
 df %>% 
@@ -158,6 +145,8 @@ df %>%
 	distinct(WorkerId) %>%                         # show each distinct ID once
 	kable()                                        # print it all pretty-like
 ```
+
+- **Follow-up questions**: How many total answers would we lose if we discarded the work of suspicious workers? Also, is there a more systematic way to choose the quantile? 
 
 
 
@@ -199,6 +188,19 @@ notUniversalWrongC <- nrow(notUniversalWrong)
 In total, there were `r universalC` surveys where universal was marked as yes, and `r universalWrongC` of these did not follow the logical flow. Of the `r notUniversalC` surveys where universal was marked no, `r notUniversalWrongC` did not follow the logical flow of the survey.
 
 Given as percentages, `r round(universalWrongC / universalC, 2)` percent of those that were marked yes were done wrong, and `r round(notUniversalWrongC / notUniversalC, 2)` percent of answers marked no were done wrong. In total, `r round((universalWrongC + notUniversalWrongC) / (universalC + notUniversalC), 2)` percent of survey responses where the answerer could determine whether or not the policy was universal did not follow the logical flow of the survey.
+
+
+We also tested this the following way: 
+```{r}
+num_conflicts <- df %>% 
+	group_by(Input.INSTNM, WorkerId) %>% 
+	summarise(conflict = sum((Answer.universal == "yes")*(!is.na(Answer.optinpolicy)))) %>% 
+	summarise(conflict = sum(conflict)) %>% 
+	summarise(num_conflicts = sum(conflict, na.rm = T))
+
+```
+There were `r num_conflicts$num_conflicts[1]` instances in which workers answered the the policy was "universal" but proceeded to answer the opt-in policy question as well. 
+
 
 
 # Discussion and Recommendations
