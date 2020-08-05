@@ -249,3 +249,42 @@ Possible: confusion between pass/fail and pass/no credit.
 - Josef: they don't seem to GET the logical flow of the survey. 
 
 
+## Recommmendations
+
+### Survey modifications
+
+#### Logical flow
+	
+Can we reduce the number of questions they have to skip? 
+
+What was the default policy? Was there an opt-in policy? If not, then universal. 
+
+Possible issue: "default" might be confusing. 
+
+Josef thinks that a lot of the logical flow issues reflect lack of understanding of the logical flow more clear. BUT we lose a quality check around whether or not they were paying attention. 
+
+Phil: is this a question that Chad has thought about before? Elisabeth: if we had an option to enforce the flow, wouldn't he have done it? 
+	
+#### Universal Policy Language
+
+Definition of universal language policy is tripping people up. Folks aren't really getting the "universal" word. First time Elisabeth was reading the survey, she wasn't sure what it meant. Possibility: we could instead ask about whether there was any change to the grading policy. 
+
+Opt-in language is very clear in Elisabeth's view. 
+
+Josef: could flip question: was there an optional policy, or was there a non-optional policy? Doesn't require defining universal. 
+
+Especially since universal policies are rare. So we can make the affirmative option correspond to the more common possibility. Have it be the "no" option. 
+
+"Did students get to make a choice about how they were graded?"
+
+#### Implausible answers
+
+Folks pulling stuff out of thin air. 
+
+Detection might be possible, but this may just be an aspect of what workers we get, settings, payment, etc. 
+
+Could require that they click on a link to answer questions? Indicate which link they got information from? 
+
+Making the survey less confusing might help to reduce fabricated information.
+
+Fewer questions. 
