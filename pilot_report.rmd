@@ -220,7 +220,7 @@ notUniversalWrongC <- nrow(notUniversalWrong)
 
 In total, there were `r universalC` surveys where universal was marked as yes, and `r universalWrongC` of these did not follow the logical flow. Of the `r notUniversalC` surveys where universal was marked no, `r notUniversalWrongC` did not follow the logical flow of the survey.
 
-Given as percentages, `r round(universalWrongC / universalC, 2)` percent of those that were marked yes were done wrong, and `r round(notUniversalWrongC / notUniversalC, 2)` percent of answers marked no were done wrong. In total, `r round((universalWrongC + notUniversalWrongC) / (universalC + notUniversalC), 2)` percent of survey responses where the answerer could determine whether or not the policy was universal did not follow the logical flow of the survey.
+Given as percentages, `r round(100 * universalWrongC / universalC, 2)` percent of those that were marked yes were done wrong, and `r round(100 * notUniversalWrongC / notUniversalC, 2)` percent of answers marked no were done wrong. In total, `r round(100 * (universalWrongC + notUniversalWrongC) / (universalC + notUniversalC), 2)` percent of survey responses where the answerer could determine whether or not the policy was universal did not follow the logical flow of the survey.
 
 
 We also tested this the following way: 
