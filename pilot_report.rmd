@@ -132,6 +132,14 @@ df %>%
 	kable(digits = 2)
 ```
 
+- We have the most majority consensus on Q1, which also has the most completeness. This could be promising, or it could just be because Q1 is binary.
+
+- The three questions regarding an opt-in policy (default policy, opt-in policy, application of opt-in policy) all had consensus about half the time. The deadline had consensus somewhat less than half the time.
+
+- The very low consensus on the universal policy is disturbing, and likely indicates worker confusion.
+
+- **Further Thought** Are we counting it as consensus when at least 2 workers respond that they cannot determine? 
+
 ## Reliability of Answers
 
 ### Worker Reliability Based on Time Spent
