@@ -85,6 +85,28 @@ completeness %>%
 	kable(digits = c(0, 2, 1))
 ```
 
+To relate this data back to the survey, the survey questions and results are paraphrased below.
+
+- **Q1: Is there an universal policy?** If yes, answer Q2, if no, skip to Q3.
+We always have an answer for whether the policy was universal, which is good.
+
+- **Q2: What was the universal policy?**
+We have a specified universal policy 52% of the time. If the survey had been completed correctly, then we would expect 48% completeness on Q3-Q6.
+
+- **Q3: If there was no universal policy, what was the default policy?**
+We have 72% completeness on this question, indicating that the workers are misunderstanding the logical flow of the survey.
+
+- **Q4: What was the opt-in policy ?**
+As the questions get more complex, completeness drops to 69%.
+
+- **Q5: How was the opt-in policy applied?**
+Completeness remains at 69%. This makes sense becuase typically the opt-in policy and it's application are described together on websites.
+
+- **Q6: When was the deadline for choosing the opt-in policy? (before or after grades)**
+Completeness remains at 69%. This seems unlikely because it's a harder piece of information to find, unless we're counting "Cannot Determine" as a complete answer?
+
+Questions 7 and 8 track worker confidence and comments, so their completeness is not very informative.
+
 ## Majority
 
 How often is there a majority answer to a given question? In this quick analysis, we define "majority" as: 
