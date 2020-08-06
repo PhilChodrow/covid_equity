@@ -1563,13 +1563,14 @@ div.tocify {
 library(knitr)
 
 df &lt;- read_csv(&quot;data/Batch_4133302_batch_results.csv&quot;)</code></pre>
-<p>Here are a few things that I looked at very briefly – feel free to modify, discard, or use.</p>
+<p>For the analysis, <code>df</code> is the data frame containing the results of the pilot data.</p>
 <div id="data-completeness-1" class="section level2">
 <h2><span class="header-section-number">3.1</span> Data Completeness</h2>
-<p>The data has <code>204</code> rows.</p>
+<p>The data has 204 rows.</p>
 <pre class="r"><code>sub &lt;- df %&gt;% 
-    select(LifetimeApprovalRate, AcceptTime, SubmitTime, Input.INSTNM,  contains(&quot;Answer&quot;))</code></pre>
-<pre class="r"><code>completeness &lt;- sub %&gt;% 
+    select(LifetimeApprovalRate, AcceptTime, SubmitTime, Input.INSTNM,  contains(&quot;Answer&quot;))
+
+completeness &lt;- sub %&gt;% 
     group_by(Input.INSTNM) %&gt;% 
     summarise(across(contains(&quot;Answer&quot;), ~mean(!is.na(.x)))) %&gt;% 
     summarise(across(contains(&quot;Answer&quot;), mean)) %&gt;% 
@@ -1651,8 +1652,8 @@ completeness %&gt;%
 </ul>
 <p>Questions 7 and 8 track worker confidence and comments, so their completeness is not very informative.</p>
 </div>
-<div id="majority" class="section level2">
-<h2><span class="header-section-number">3.2</span> Majority</h2>
+<div id="presence-of-consensus-1" class="section level2">
+<h2><span class="header-section-number">3.2</span> Presence of Consensus</h2>
 <p>How often is there a majority answer to a given question? In this quick analysis, we define “majority” as:</p>
 <ol style="list-style-type: decimal">
 <li>At least two workers agree on a question.</li>

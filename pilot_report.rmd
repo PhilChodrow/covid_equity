@@ -51,17 +51,14 @@ library(knitr)
 df <- read_csv("data/Batch_4133302_batch_results.csv")
 ```
 
-Here are a few things that I looked at very briefly -- feel free to modify, discard, or use. 
+For the analysis, `df` is the data frame containing the results of the pilot data.
 
 ## Data Completeness
-The data has ```r nrow(df)``` rows. 
-
-```{r}
-sub <- df %>% 
-	select(LifetimeApprovalRate, AcceptTime, SubmitTime, Input.INSTNM,  contains("Answer"))
-```
+The data has `r nrow(df)` rows. 
 
 ```{r, warning=FALSE, message=FALSE}
+sub <- df %>% 
+	select(LifetimeApprovalRate, AcceptTime, SubmitTime, Input.INSTNM,  contains("Answer"))
 
 completeness <- sub %>% 
 	group_by(Input.INSTNM) %>% 
@@ -107,7 +104,7 @@ Completeness remains at 69%. This seems unlikely because it's a harder piece of 
 
 Questions 7 and 8 track worker confidence and comments, so their completeness is not very informative.
 
-## Majority
+## Presence of Consensus
 
 How often is there a majority answer to a given question? In this quick analysis, we define "majority" as: 
 
