@@ -1562,8 +1562,9 @@ div.tocify {
 <pre class="r"><code>library(tidyverse)
 library(knitr)
 
+# The following code can be used to access the pilot data if further analysis is desired
 df &lt;- read_csv(&quot;data/Batch_4133302_batch_results.csv&quot;)</code></pre>
-<p>For the analysis, <code>df</code> is the data frame containing the results of the pilot data.</p>
+<p>For the analysis, <code>df</code> is the data frame containing the pilot data.</p>
 <div id="data-completeness-1" class="section level2">
 <h2><span class="header-section-number">3.1</span> Data Completeness</h2>
 <p>The data has 204 rows.</p>
@@ -1797,7 +1798,7 @@ df %&gt;%
 </div>
 <div id="logical-flow" class="section level3">
 <h3><span class="header-section-number">3.3.2</span> Logical Flow</h3>
-<p>Could and did the workers follow the logical flow of the questions? The logical flow was based on whether or not there was a universal policy, so we have two cases.</p>
+<p>Could and did the workers follow the logical flow of the questions? The logical flow was based on whether or not there was a universal policy, so we have two cases:</p>
 <ol style="list-style-type: decimal">
 <li>The worker marked “yes” for universal. In this case, the worker did not follow the logical flow if they answered any of the questions besides what the universal policy was.</li>
 <li>The worker marked “no” for universal. In this case, the worker did not follow the logical flow if they left blank any of the questions besides universal policy or if they answered universal policy.</li>
@@ -1810,8 +1811,6 @@ df %&gt;%
     summarise(conflict = sum((Answer.universal == &quot;yes&quot;)*(!is.na(Answer.optinpolicy)))) %&gt;% 
     summarise(conflict = sum(conflict)) %&gt;% 
     summarise(num_conflicts = sum(conflict, na.rm = T))</code></pre>
-<pre><code>## `summarise()` regrouping output by &#39;Input.INSTNM&#39; (override with `.groups` argument)</code></pre>
-<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
 <p>There were 43 instances in which workers answered the the policy was “universal” but proceeded to answer the opt-in policy question as well.</p>
 </div>
 </div>
@@ -1820,39 +1819,33 @@ df %&gt;%
 <h1><span class="header-section-number">4</span> Discussion and Recommendations</h1>
 <p>We are going to want both a time-based cutoff and a content-based test to detect workers who are not in fact seeking out the information they are prompted for. These could be based on the logic of the question flows, for example. On the other hand, even workers who got good answers have also occasionally violated the survey logic.</p>
 <p>Possibly the word “universal” is confusing, but possibly there’s also issues with the conditional flow of the survey.</p>
-<p>Possible: confusion between pass/fail and pass/no credit.</p>
+<p>We also noted that there may be some confusion on the difference between pass/fail and pass/no credit policies. We may want to make sure it is clear that pass/no credit is a policy that does not affect GPA whereas a fail affects GPA. HOwever, some institutions do not make it clear whether or not the policy will affect GPA, in which case, we have a few options to try to make the survey easier to fill out:</p>
 <ul>
-<li><p>Elisabeth: the reason we care is that pass/no credit doesn’t affect GPA, unlike pass/fail. Pass/no credit is usually explicit that the results won’t go into GPA, whereas pass/fail is often less explicit. So this is often not explicitly stated. Lots of schools do things like: “satisfactory/not satisfactory” which can be very difficult for a worker to calculate. Suggestion: third category, “pass/not pass,” GPA impact unclear. Maybe a new question: letter-grading scheme or no?</p></li>
-<li><p>Josef: they don’t seem to GET the logical flow of the survey.</p></li>
+<li><p>Add a new grading policy option for pass/not pass specifying that the impact on GPA is unclear.</p></li>
+<li><p>Add a new question that is only used to determine whether or not there is a letter grading scheme.</p></li>
 </ul>
-<div id="recommmendations" class="section level2">
-<h2><span class="header-section-number">4.1</span> Recommmendations</h2>
-<div id="survey-modifications" class="section level3">
-<h3><span class="header-section-number">4.1.1</span> Survey modifications</h3>
-<div id="logical-flow-1" class="section level4">
-<h4><span class="header-section-number">4.1.1.1</span> Logical flow</h4>
-<p>Can we reduce the number of questions they have to skip?</p>
-<p>What was the default policy? Was there an opt-in policy? If not, then universal.</p>
-<p>Possible issue: “default” might be confusing.</p>
-<p>Josef thinks that a lot of the logical flow issues reflect lack of understanding of the logical flow more clear. BUT we lose a quality check around whether or not they were paying attention.</p>
-<p>Phil: is this a question that Chad has thought about before? Elisabeth: if we had an option to enforce the flow, wouldn’t he have done it?</p>
+<p>The quantity of responses not following the logical flow of the survey would also indicate that some amount of the workers did not understand the logical flow. While some may have just not noticed it or ignored it, with 34.55 percent not following the instructions, it seems likely something was unclear.</p>
+<div id="recommmendations-for-survey-modifications" class="section level2">
+<h2><span class="header-section-number">4.1</span> Recommmendations for Survey Modifications</h2>
+<div id="logical-flow-1" class="section level3">
+<h3><span class="header-section-number">4.1.1</span> Logical flow</h3>
+<p>Can we reduce the number of questions they have to skip? It’s possible this would make the survey easier to follow.</p>
+<p>If we do manage to simplify the survey in this way, it might make the logical flow easier to understand. However, it is important to note that the logical flow can also be used as a quality check. If a small number of workers do not follow the instructions, we can guess that they were not paying much attention when answering the questions. Do we need a balance between simplifying the survey and using the flow as a quality check?</p>
+<p>For example, if there were some way to automatically make the survey follow the logical flow (only show certain questions depending on the answers to other questions), we can guarantee no one is confused, but we also can no longer tell who was paying close attention when taking the survey.</p>
 </div>
-<div id="universal-policy-language" class="section level4">
-<h4><span class="header-section-number">4.1.1.2</span> Universal Policy Language</h4>
-<p>Definition of universal language policy is tripping people up. Folks aren’t really getting the “universal” word. First time Elisabeth was reading the survey, she wasn’t sure what it meant. Possibility: we could instead ask about whether there was any change to the grading policy.</p>
-<p>Opt-in language is very clear in Elisabeth’s view.</p>
-<p>Josef: could flip question: was there an optional policy, or was there a non-optional policy? Doesn’t require defining universal.</p>
-<p>Especially since universal policies are rare. So we can make the affirmative option correspond to the more common possibility. Have it be the “no” option.</p>
-<p>“Did students get to make a choice about how they were graded?”</p>
+<div id="universal-policy-language" class="section level3">
+<h3><span class="header-section-number">4.1.2</span> Universal Policy Language</h3>
+<p>Definition of universal language policy is tripping people up. It seems likely that many workers are not really understanding the word “universal.” The first time Elisabeth was reading the survey, she wasn’t sure what it meant. We could possibly instead ask about whether there was any change to the grading policy. We could also try using other language such as a “default” grading policy, but there is a chance that turns out just as confusing.</p>
+<p>The language of an “opt-in” policy seems a lot more clear. This means we might be able to flip the questions, and instead of asking about a universal policy, we ask if there was an optional policy. This avoids the whole issue of clearly defining what “universal” means in the context of the survey.</p>
+<p>Since universal policies appear to be more rare, we can make the affirmative option correspond to the more common possibility.</p>
+<p>An example of a new question could be: “Did students get to make a choice about how they were graded?”</p>
 </div>
-<div id="implausible-answers" class="section level4">
-<h4><span class="header-section-number">4.1.1.3</span> Implausible answers</h4>
-<p>Folks pulling stuff out of thin air.</p>
-<p>Detection might be possible, but this may just be an aspect of what workers we get, settings, payment, etc.</p>
-<p>Could require that they click on a link to answer questions? Indicate which link they got information from?</p>
-<p>Making the survey less confusing might help to reduce fabricated information.</p>
-<p>Fewer questions.</p>
-</div>
+<div id="implausible-answers" class="section level3">
+<h3><span class="header-section-number">4.1.3</span> Implausible answers</h3>
+<p>Some of the answers seem to be pulled out of thin air. In some cases, none of the links have answers and they were not found by hand, but the workers managed to find them in a very small amount of time.</p>
+<p>Detection of these seemingly fake answers might be possible, but this may just be an aspect of what workers we get based on settings, payment, and other worker options on Mechanical Turk.</p>
+<p>Would it be possible to have the workers click on a link before answering the questions? This could encourage them to look at some pages before just answering randomly. We could also add a question asking which link the information was found on, but that could just be filled out randomly as well.</p>
+<p>Making the survey less confusing might help to reduce fabricated information, as workers will have to put in less effort to answer the questions. It is also possible that reducing the number of questions would encourage workers to look harder for the answers, as it would be less work.</p>
 </div>
 </div>
 </div>

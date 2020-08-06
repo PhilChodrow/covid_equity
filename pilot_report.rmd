@@ -48,10 +48,11 @@ This is a future question we might take up -- does not need to be pursued in thi
 library(tidyverse)
 library(knitr)
 
+# The following code can be used to access the pilot data if further analysis is desired
 df <- read_csv("data/Batch_4133302_batch_results.csv")
 ```
 
-For the analysis, `df` is the data frame containing the results of the pilot data.
+For the analysis, `df` is the data frame containing the pilot data. 
 
 ## Data Completeness
 The data has `r nrow(df)` rows. 
@@ -183,7 +184,7 @@ The first priority here is determining how to choose the quantile, and whether w
 
 ### Logical Flow
 
-Could and did the workers follow the logical flow of the questions? The logical flow was based on whether or not there was a universal policy, so we have two cases.
+Could and did the workers follow the logical flow of the questions? The logical flow was based on whether or not there was a universal policy, so we have two cases:
 
 1. The worker marked "yes" for universal. In this case, the worker did not follow the logical flow if they answered any of the questions besides what the universal policy was.
 2. The worker marked "no" for universal. In this case, the worker did not follow the logical flow if they left blank any of the questions besides universal policy or if they answered universal policy.
@@ -221,7 +222,7 @@ Given as percentages, `r round(100 * universalWrongC / universalC, 2)` percent o
 
 
 We also tested this the following way: 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 num_conflicts <- df %>% 
 	group_by(Input.INSTNM, WorkerId) %>% 
 	summarise(conflict = sum((Answer.universal == "yes")*(!is.na(Answer.optinpolicy)))) %>% 
@@ -239,49 +240,41 @@ We are going to want both a time-based cutoff and a content-based test to detect
 
 Possibly the word "universal" is confusing, but possibly there's also issues with the conditional flow of the survey. 
 
-Possible: confusion between pass/fail and pass/no credit. 
+We also noted that there may be some confusion on the difference between pass/fail and pass/no credit policies. We may want to make sure it is clear that pass/no credit is a policy that does not affect GPA whereas a fail affects GPA. HOwever, some institutions do not make it clear whether or not the policy will affect GPA, in which case, we have a few options to try to make the survey easier to fill out:
 
-- Elisabeth: the reason we care is that pass/no credit doesn't affect GPA, unlike pass/fail. Pass/no credit is usually explicit that the results won't go into GPA, whereas pass/fail is often less explicit. So this is often not explicitly stated. Lots of schools do things like: "satisfactory/not satisfactory" which can be very difficult for a worker to calculate. Suggestion: third category, "pass/not pass," GPA impact unclear. Maybe a new question: letter-grading scheme or no? 
+- Add a new grading policy option for pass/not pass specifying that the impact on GPA is unclear.
 
-- Josef: they don't seem to GET the logical flow of the survey. 
+- Add a new question that is only used to determine whether or not there is a letter grading scheme.
+
+The quantity of responses not following the logical flow of the survey would also indicate that some amount of the workers did not understand the logical flow. While some may have just not noticed it or ignored it, with `r round(100 * (universalWrongC + notUniversalWrongC) / (universalC + notUniversalC), 2)` percent not following the instructions, it seems likely something was unclear.
 
 
-## Recommmendations
+## Recommmendations for Survey Modifications
 
-### Survey modifications
-
-#### Logical flow
+### Logical flow
 	
-Can we reduce the number of questions they have to skip? 
+Can we reduce the number of questions they have to skip? It's possible this would make the survey easier to follow.
 
-What was the default policy? Was there an opt-in policy? If not, then universal. 
+If we do manage to simplify the survey in this way, it might make the logical flow easier to understand. However, it is important to note that the logical flow can also be used as a quality check. If a small number of workers do not follow the instructions, we can guess that they were not paying much attention when answering the questions. Do we need a balance between simplifying the survey and using the flow as a quality check?
 
-Possible issue: "default" might be confusing. 
-
-Josef thinks that a lot of the logical flow issues reflect lack of understanding of the logical flow more clear. BUT we lose a quality check around whether or not they were paying attention. 
-
-Phil: is this a question that Chad has thought about before? Elisabeth: if we had an option to enforce the flow, wouldn't he have done it? 
+For example, if there were some way to automatically make the survey follow the logical flow (only show certain questions depending on the answers to other questions), we can guarantee no one is confused, but we also can no longer tell who was paying close attention when taking the survey.
 	
-#### Universal Policy Language
+### Universal Policy Language
 
-Definition of universal language policy is tripping people up. Folks aren't really getting the "universal" word. First time Elisabeth was reading the survey, she wasn't sure what it meant. Possibility: we could instead ask about whether there was any change to the grading policy. 
+Definition of universal language policy is tripping people up. It seems likely that many workers are not really understanding the word "universal." The first time Elisabeth was reading the survey, she wasn't sure what it meant. We could possibly instead ask about whether there was any change to the grading policy. We could also try using other language such as a "default" grading policy, but there is a chance that turns out just as confusing.
 
-Opt-in language is very clear in Elisabeth's view. 
+The language of an "opt-in" policy seems a lot more clear. This means we might be able to flip the questions, and instead of asking about a universal policy, we ask if there was an optional policy. This avoids the whole issue of clearly defining what "universal" means in the context of the survey.
 
-Josef: could flip question: was there an optional policy, or was there a non-optional policy? Doesn't require defining universal. 
+Since universal policies appear to be more rare, we can make the affirmative option correspond to the more common possibility. 
 
-Especially since universal policies are rare. So we can make the affirmative option correspond to the more common possibility. Have it be the "no" option. 
+An example of a new question could be: "Did students get to make a choice about how they were graded?"
 
-"Did students get to make a choice about how they were graded?"
+### Implausible answers
 
-#### Implausible answers
+Some of the answers seem to be pulled out of thin air. In some cases, none of the links have answers and they were not found by hand, but the workers managed to find them in a very small amount of time.
 
-Folks pulling stuff out of thin air. 
+Detection of these seemingly fake answers might be possible, but this may just be an aspect of what workers we get based on settings, payment, and other worker options on Mechanical Turk.
 
-Detection might be possible, but this may just be an aspect of what workers we get, settings, payment, etc. 
+Would it be possible to have the workers click on a link before answering the questions? This could encourage them to look at some pages before just answering randomly. We could also add a question asking which link the information was found on, but that could just be filled out randomly as well.
 
-Could require that they click on a link to answer questions? Indicate which link they got information from? 
-
-Making the survey less confusing might help to reduce fabricated information.
-
-Fewer questions. 
+Making the survey less confusing might help to reduce fabricated information, as workers will have to put in less effort to answer the questions. It is also possible that reducing the number of questions would encourage workers to look harder for the answers, as it would be less work.
