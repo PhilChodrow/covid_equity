@@ -189,7 +189,7 @@ Could and did the workers follow the logical flow of the questions? The logical 
 1. The worker marked "yes" for universal. In this case, the worker did not follow the logical flow if they answered any of the questions besides what the universal policy was.
 2. The worker marked "no" for universal. In this case, the worker did not follow the logical flow if they left blank any of the questions besides universal policy or if they answered universal policy.
 
-```{r, warning=FALSE, message=FALSE, include=FALSE}
+```{r, warning=FALSE, message=FALSE}
 # All points for which universal was marked yes
 # In these cases, everything else should be NA except what the policy was
 universal <- df %>%
@@ -208,7 +208,9 @@ notUniversal <- df %>%
 
 notUniversalWrong <- notUniversal %>%
 	filter(is.na(Answer.optinpolicy) | !is.na(Answer.universalpolicy))
+```
 
+```{r, warning=FALSE, message=FALSE, include=FALSE}
 # Lengths of the above
 universalC <- nrow(universal)
 universalWrongC <- nrow(universalWrong)

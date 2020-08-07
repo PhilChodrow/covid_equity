@@ -1803,6 +1803,24 @@ df %&gt;%
 <li>The worker marked “yes” for universal. In this case, the worker did not follow the logical flow if they answered any of the questions besides what the universal policy was.</li>
 <li>The worker marked “no” for universal. In this case, the worker did not follow the logical flow if they left blank any of the questions besides universal policy or if they answered universal policy.</li>
 </ol>
+<pre class="r"><code># All points for which universal was marked yes
+# In these cases, everything else should be NA except what the policy was
+universal &lt;- df %&gt;%
+    select(contains(&quot;Answer.&quot;)) %&gt;%
+    filter(Answer.universal == &quot;yes&quot;)
+
+# All instances where universal was yes but something else was filled in
+universalWrong &lt;- universal %&gt;%
+    filter(!is.na(Answer.optinpolicy))
+
+# All instances where universal was marked no
+# In these cases, everything else should be answered except universal policy
+notUniversal &lt;- df %&gt;%
+    select(contains(&quot;Answer.&quot;)) %&gt;%
+    filter(Answer.universal == &quot;no&quot;)
+
+notUniversalWrong &lt;- notUniversal %&gt;%
+    filter(is.na(Answer.optinpolicy) | !is.na(Answer.universalpolicy))</code></pre>
 <p>In total, there were 96 surveys where universal was marked as yes, and 43 of these did not follow the logical flow. Of the 69 surveys where universal was marked no, 14 did not follow the logical flow of the survey.</p>
 <p>Given as percentages, 44.79 percent of those that were marked yes were done wrong, and 20.29 percent of answers marked no were done wrong. In total, 34.55 percent of survey responses where the answerer could determine whether or not the policy was universal did not follow the logical flow of the survey.</p>
 <p>We also tested this the following way:</p>
