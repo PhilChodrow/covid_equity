@@ -18,31 +18,56 @@ In this report, we will study the quality of the answers we received from Amazon
 1. Assess the **quality** of the answers we received. If we ran exactly the same methodology on the full list of institutions, how much reliable data would we gather? 
 2. **Make recommendations** for improving the quality of the data we gather in the large-scale study. 
 
-# Approach {.tabset}
+<!-- # Approach {.tabset} -->
 
-## Data Completeness
+<!-- ## Data Completeness -->
 
-A basic question: how often do we have any data at all? Possible metrics: 
+<!-- A basic question: how often do we have any data at all? Possible metrics:  -->
 
-1. How many `NA`s do we have?
-2. For how many institutions do we have at least one answer in each question?
+<!-- 1. How many `NA`s do we have? -->
+<!-- 2. For how many institutions do we have at least one answer in each question? -->
 
-## Presence of Consensus
+<!-- ## Presence of Consensus -->
 
-If we do have data, how often is there a clear consensus on the answer? Some possible metrics: 
+<!-- If we do have data, how often is there a clear consensus on the answer? Some possible metrics:  -->
 
-1. In which schools and questions is there full consensus among the workers?
-2. In which schools and questions is there a clear majority answer? 
+<!-- 1. In which schools and questions is there full consensus among the workers? -->
+<!-- 2. In which schools and questions is there a clear majority answer?  -->
 
-## Reliability of Answers
+<!-- ## Reliability of Answers -->
 
-We've noticed at least one case in which it appears that a worker did not even attempt to retrieve the information, and instead just clicked through the form. Can we detect this kind of behavior and discourage it? Or, at least, can we discount those answers in the analysis phase? 
-This is a future question we might take up -- does not need to be pursued in this early report. Some possible diagnostics: 
+<!-- We've noticed at least one case in which it appears that a worker did not even attempt to retrieve the information, and instead just clicked through the form. Can we detect this kind of behavior and discourage it? Or, at least, can we discount those answers in the analysis phase?  -->
+<!-- This is a future question we might take up -- does not need to be pursued in this early report. Some possible diagnostics:  -->
 
-1. Answer-level consistency checks. Did a worker give contradictory answers to two questions for the same school?
-2. Worker-level assessments. Worker rating; average time spent on task; comparing answers across multiple schools. 
+<!-- 1. Answer-level consistency checks. Did a worker give contradictory answers to two questions for the same school? -->
+<!-- 2. Worker-level assessments. Worker rating; average time spent on task; comparing answers across multiple schools.  -->
 
-# Analysis
+# Paraphrase of Survey
+
+For reference, we loosely paraphrase the survey questions here. 
+
+- **Q1: Is there an universal policy?** If yes, answer Q2, if no, skip to Q3.
+We always have an answer for whether the policy was universal, which is good.
+
+- **Q2: What was the universal policy?**
+We have a specified universal policy 52% of the time. If the survey had been completed correctly, then we would expect 48% completeness on Q3-Q6.
+
+- **Q3: If there was no universal policy, what was the default policy?**
+We have 72% completeness on this question, indicating that the workers are misunderstanding the logical flow of the survey.
+
+- **Q4: What was the opt-in policy ?**
+As the questions get more complex, completeness drops to 69%.
+
+- **Q5: How was the opt-in policy applied?**
+Completeness remains at 69%. This makes sense becuase typically the opt-in policy and it's application are described together on websites.
+
+- **Q6: When was the deadline for choosing the opt-in policy? (before or after grades)**
+Completeness remains at 69%. This seems unlikely because it's a harder piece of information to find, unless we're counting "Cannot Determine" as a complete answer?
+
+Questions 7 and 8 track worker confidence and comments, so their completeness is not very informative.
+
+
+# Analysis {.tabset}
 
 ```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -55,7 +80,10 @@ df <- read_csv("data/Batch_4133302_batch_results.csv")
 For the analysis, `df` is the data frame containing the pilot data. 
 
 ## Data Completeness
-The data has `r nrow(df)` rows. 
+
+For a first, simple check, we study how frequently an answer is provided to each question, as well as the mean number of distinct answers. In this analysis, we include "cannotdetermine" as a valid answer. 
+
+We also study the mean number of distinct answers provided to each question. 
 
 ```{r, warning=FALSE, message=FALSE}
 sub <- df %>% 
@@ -83,31 +111,12 @@ completeness %>%
 	kable(digits = c(0, 2, 1))
 ```
 
-To relate this data back to the survey, the survey questions and results are paraphrased below.
 
-- **Q1: Is there an universal policy?** If yes, answer Q2, if no, skip to Q3.
-We always have an answer for whether the policy was universal, which is good.
+## Presence of Majority Opinion
 
-- **Q2: What was the universal policy?**
-We have a specified universal policy 52% of the time. If the survey had been completed correctly, then we would expect 48% completeness on Q3-Q6.
+How often is there a majority answer to a given question? This is important to track, since we will generally use this as a guide to the correct answer when possible. 
 
-- **Q3: If there was no universal policy, what was the default policy?**
-We have 72% completeness on this question, indicating that the workers are misunderstanding the logical flow of the survey.
-
-- **Q4: What was the opt-in policy ?**
-As the questions get more complex, completeness drops to 69%.
-
-- **Q5: How was the opt-in policy applied?**
-Completeness remains at 69%. This makes sense becuase typically the opt-in policy and it's application are described together on websites.
-
-- **Q6: When was the deadline for choosing the opt-in policy? (before or after grades)**
-Completeness remains at 69%. This seems unlikely because it's a harder piece of information to find, unless we're counting "Cannot Determine" as a complete answer?
-
-Questions 7 and 8 track worker confidence and comments, so their completeness is not very informative.
-
-## Presence of Consensus
-
-How often is there a majority answer to a given question? In this quick analysis, we define "majority" as: 
+For the purpose of this analysis, we define "majority" as: 
 
 1. At least two workers agree on a question. 
 2. Any other workers have picked different answer: there is no other answer with two workers endorsing it. 
@@ -136,11 +145,7 @@ df %>%
 
 - The very low consensus on the universal policy is disturbing, and likely indicates worker confusion.
 
-- **Further Thought** Are we counting it as consensus when at least 2 workers respond that they cannot determine? 
-
-## Reliability of Answers
-
-### Worker Reliability Based on Time Spent
+## Time Spent
 
 Can we find suspicious workers based on their work time? The histogram below shows the distribution of work times. 
 
@@ -166,23 +171,23 @@ for(i in 1:nrow(df))
 unique(sus_workers)
 ```
 
-```{r, warning = FALSE, message = FALSE}
-# A more idiomatic to R version from Phil
+<!-- ```{r, warning = FALSE, message = FALSE} -->
+<!-- # A more idiomatic to R version from Phil -->
 
-# x %>% f(y) is the same as f(x,y)
-df %>% 
-	mutate(sus = WorkTimeInSeconds < min_time) %>% # boolean column for suspicious workers
-	filter(sus) %>%                                # keep only those rows for which sus = TRUE
-	distinct(WorkerId) %>%                         # show each distinct ID once
-	kable()                                        # print it all pretty-like
-```
+<!-- # x %>% f(y) is the same as f(x,y) -->
+<!-- df %>%  -->
+<!-- 	mutate(sus = WorkTimeInSeconds < min_time) %>% # boolean column for suspicious workers -->
+<!-- 	filter(sus) %>%                                # keep only those rows for which sus = TRUE -->
+<!-- 	distinct(WorkerId) %>%                         # show each distinct ID once -->
+<!-- 	kable()                                        # print it all pretty-like -->
+<!-- ``` -->
 
-- **Follow-up questions**: How many total answers would we lose if we discarded the work of suspicious workers? Also, is there a more systematic way to choose the quantile? 
+<!-- - **Follow-up questions**: How many total answers would we lose if we discarded the work of suspicious workers? Also, is there a more systematic way to choose the quantile?  -->
 
 The first priority here is determining how to choose the quantile, and whether we want to choose a quantile or a specific minimum time. Ideally, the histogram would give us an idea of where the minimum should be, but it's somewhat unclear. There is a spike around 45 seconds that could potentially be a good cut off time. Possibly we could identify some workers whose answers seem unreliable, and use their work times as references?
 
 
-### Logical Flow
+## Control Flow Violations
 
 Could and did the workers follow the logical flow of the questions? The logical flow was based on whether or not there was a universal policy, so we have two cases:
 
