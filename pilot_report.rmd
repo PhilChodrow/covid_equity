@@ -159,7 +159,6 @@ df %>%
 We can retrieve a list of workers who completed the survey in less than the minimum time in both of the following ways:
 
 ```{r, warning=FALSE, message=FALSE}
-# Elisabeth's first try
 
 min_time <- quantile(df$WorkTimeInSeconds, 0.25)
 sus_workers <- c()
@@ -247,7 +246,7 @@ We are going to want both a time-based cutoff and a content-based test to detect
 
 Possibly the word "universal" is confusing, but possibly there's also issues with the conditional flow of the survey. 
 
-We also noted that there may be some confusion on the difference between pass/fail and pass/no credit policies. We may want to make sure it is clear that pass/no credit is a policy that does not affect GPA whereas a fail affects GPA. HOwever, some institutions do not make it clear whether or not the policy will affect GPA, in which case, we have a few options to try to make the survey easier to fill out:
+We also noted that there may be some confusion on the difference between pass/fail and pass/no credit policies. We may want to make sure it is clear that pass/no credit is a policy that does not affect GPA whereas a fail affects GPA. However, some institutions do not make it clear whether or not the policy will affect GPA, in which case, we have a few options to try to make the survey easier to fill out:
 
 - Add a new grading policy option for pass/not pass specifying that the impact on GPA is unclear.
 
