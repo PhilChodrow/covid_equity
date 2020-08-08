@@ -46,25 +46,17 @@ In this report, we will study the quality of the answers we received from Amazon
 
 For reference, we loosely paraphrase the survey questions here. 
 
-- **Q1: Is there an universal policy?** If yes, answer Q2, if no, skip to Q3.
-We always have an answer for whether the policy was universal, which is good.
+- Q1: Is there an universal policy? If yes, answer Q2, if no, skip to Q3.
 
-- **Q2: What was the universal policy?**
-We have a specified universal policy 52% of the time. If the survey had been completed correctly, then we would expect 48% completeness on Q3-Q6.
+- Q2: What was the universal policy?
 
-- **Q3: If there was no universal policy, what was the default policy?**
-We have 72% completeness on this question, indicating that the workers are misunderstanding the logical flow of the survey.
+- Q3: If there was no universal policy, what was the default policy?
 
-- **Q4: What was the opt-in policy ?**
-As the questions get more complex, completeness drops to 69%.
+- Q4: What was the opt-in policy ?
 
-- **Q5: How was the opt-in policy applied?**
-Completeness remains at 69%. This makes sense becuase typically the opt-in policy and it's application are described together on websites.
+- Q5: How was the opt-in policy applied?
 
-- **Q6: When was the deadline for choosing the opt-in policy? (before or after grades)**
-Completeness remains at 69%. This seems unlikely because it's a harder piece of information to find, unless we're counting "Cannot Determine" as a complete answer?
-
-Questions 7 and 8 track worker confidence and comments, so their completeness is not very informative.
+- Q6: When was the deadline for choosing the opt-in policy? (before or after grades)
 
 
 # Analysis {.tabset}
@@ -111,6 +103,9 @@ completeness %>%
 	kable(digits = c(0, 2, 1))
 ```
 
+We always have an answer for whether the policy was universal, which is good.
+We have a specified universal policy 52% of the time. If the survey had been completed correctly, then we would expect 48% completeness on Q3-Q6, which are about the opt-in policy. Instead, we have 72% completeness on Q3, indicating that the workers are misunderstanding the logical flow of the survey. As the questions get more complex, completeness drops to 69% for Q4-6. The consistent 69% completeness makes sense for Q4 and Q5 becuase typically the opt-in policy and its application are described together on most websites. However, it's suspicious that the completeness remains at 69% for Q6, becuase typically the deadline for choosing a grading policy is harder to find. Note that Q7 and Q8 track worker confidence and comments, so their completeness is not very informative.
+
 
 ## Presence of Majority Opinion
 
@@ -156,7 +151,7 @@ df %>%
 	geom_histogram(bins = 100)
 ```
 
-We can retrieve a list of workers who completed the survey in less than the minimum time in both of the following ways:
+We can retrieve a list of workers who completed the survey in less than the minimum time as follows:
 
 ```{r, warning=FALSE, message=FALSE}
 
