@@ -66,7 +66,9 @@ library(tidyverse)
 library(knitr)
 
 # The following code can be used to access the pilot data if further analysis is desired
-df <- read_csv("data/Batch_4133302_batch_results.csv")
+# df <- read_csv("data/Batch_4133302_batch_results.csv")
+
+df <- read_csv("data/Batch_4149595_batch_results.csv")
 ```
 
 For the analysis, `df` is the data frame containing the pilot data. 
@@ -116,6 +118,46 @@ For the purpose of this analysis, we define "majority" as:
 1. At least two workers agree on a question. 
 2. Any other workers have picked different answer: there is no other answer with two workers endorsing it. 
 
+```{r}
+
+df <- df %>% 
+	select(Input.INSTNM, contains("Answer")) %>% 
+	mutate(across(contains("Answer"), as.character)) %>% 
+	group_by(Input.INSTNM) %>% 
+	mutate(universal_no = sum(Answer.universal == "yes"),
+				 universal_yes = sum(Answer.universal == "no"),
+				 universal_cd = sum(Answer.universal == "cannotdetermine"),
+				 universal_policy = case_when(
+				 	(universal_yes > 1) && (universal_no < 2) ~ "yes",
+				 	(universal_no > 1) && (universal_yes < 2) ~ "no",
+				 	TRUE ~ "unknown"
+				 )) %>% 
+	select(-universal_no, universal_yes, universal_cd)
+
+df <- df %>% 
+	pivot_longer(contains("Answer"))  
+```
+
+```{r}
+
+df %>% 
+	filter(!is.na(value), value != "unknown") %>%
+	group_by(Input.INSTNM, name, value, universal_policy) %>% 
+	summarise(n = n()) %>% 
+	mutate(majority_exists = (max(n) > 1) &  ((max(n) / sum(n)) > 0.5)) %>% 
+	group_by(Input.INSTNM, name, universal_policy) %>% 
+	summarise(majority_exists = max(majority_exists)) %>% 
+	ungroup() %>% 
+	group_by(name, universal_policy) %>%
+	summarise(`% Majority Exists` = sum(majority_exists)) %>% 
+	pivot_wider(names_from = universal_policy, values_from = `% Majority Exists`) %>% 
+	select(Question = name, universal = yes, not_universal = no, unknown) %>% 
+	kable(digits = 2)
+	
+```
+
+
+
 ```{r, warning=FALSE, message=FALSE}
 
 df %>% 
@@ -125,7 +167,7 @@ df %>%
 	filter(!is.na(value), value != "cannotdetermine") %>%  # treating NA and "cannotdetermine" as the same
 	group_by(Input.INSTNM, name, value) %>% 
 	summarise(n = n()) %>% 
-	mutate(majority_exists = (max(n) > 1) &  ((max(n) / sum(n)) > .5)) %>% 
+	mutate(majority_exists = (max(n) > 1) &  ((max(n) / sum(n)) > 0.5)) %>% 
 	summarise(majority_exists = max(majority_exists)) %>% 
 	ungroup() %>% 
 	group_by(name) %>%
@@ -193,7 +235,7 @@ Could and did the workers follow the logical flow of the questions? The logical 
 # In these cases, everything else should be NA except what the policy was
 universal <- df %>%
 	select(contains("Answer.")) %>%
-	filter(Answer.universal == "yes")
+	filter(Answer.universal == "no")
 
 # All instances where universal was yes but something else was filled in
 universalWrong <- universal %>%
@@ -203,7 +245,7 @@ universalWrong <- universal %>%
 # In these cases, everything else should be answered except universal policy
 notUniversal <- df %>%
 	select(contains("Answer.")) %>%
-	filter(Answer.universal == "no")
+	filter(Answer.universal == "yes")
 
 notUniversalWrong <- notUniversal %>%
 	filter(is.na(Answer.optinpolicy) | !is.na(Answer.universalpolicy))
@@ -216,6 +258,9 @@ universalWrongC <- nrow(universalWrong)
 notUniversalC <- nrow(notUniversal)
 notUniversalWrongC <- nrow(notUniversalWrong)
 ```
+
+
+
 
 In total, there were `r universalC` surveys where universal was marked as yes, and `r universalWrongC` of these did not follow the logical flow. Of the `r notUniversalC` surveys where universal was marked no, `r notUniversalWrongC` did not follow the logical flow of the survey.
 
