@@ -65,8 +65,11 @@ For reference, we loosely paraphrase the survey questions here.
 library(tidyverse)
 library(knitr)
 
-# The following code can be used to access the pilot data if further analysis is desired
+# The following code can be used to access the original pilot data if further analysis is desired
 df <- read_csv("data/Batch_4133302_batch_results.csv")
+
+# This next code will access the second round of pilot data
+df2 <- read_csv("data/Batch_4149595_batch_results.csv")
 ```
 
 For the analysis, `df` is the data frame containing the pilot data. 
