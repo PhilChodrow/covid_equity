@@ -65,10 +65,14 @@ For reference, we loosely paraphrase the survey questions here.
 library(tidyverse)
 library(knitr)
 
-# The following code can be used to access the pilot data if further analysis is desired
-# df <- read_csv("data/Batch_4133302_batch_results.csv")
+df <- read_csv("data/Batch_4133302_batch_results.csv")
 
-df <- read_csv("data/Batch_4149595_batch_results.csv")
+# This next code will access the second round of pilot data
+df2 <- read_csv("data/Batch_4149595_batch_results.csv")
+
+
+df <- df2 # for compatibility, comment out if needed
+
 ```
 
 For the analysis, `df` is the data frame containing the pilot data. 
@@ -120,7 +124,7 @@ For the purpose of this analysis, we define "majority" as:
 
 ```{r}
 
-df <- df %>% 
+sub <- df %>% 
 	select(Input.INSTNM, contains("Answer")) %>% 
 	mutate(across(contains("Answer"), as.character)) %>% 
 	group_by(Input.INSTNM) %>% 
@@ -134,13 +138,13 @@ df <- df %>%
 				 )) %>% 
 	select(-universal_no, universal_yes, universal_cd)
 
-df <- df %>% 
+sub <- sub %>% 
 	pivot_longer(contains("Answer"))  
 ```
 
 ```{r}
 
-df %>% 
+sub %>% 
 	filter(!is.na(value), value != "unknown") %>%
 	group_by(Input.INSTNM, name, value, universal_policy) %>% 
 	summarise(n = n()) %>% 
@@ -156,31 +160,25 @@ df %>%
 	
 ```
 
+```{r}
 
+sub %>% 
+	group_by(universal_policy) %>% 
+	summarise(denom = n_distinct(Input.INSTNM)) %>% 
+	pivot_wider(names_from = universal_policy, values_from = denom) %>%
+	select(universal = yes, not_universal = no, unknown) %>% 
+	kable()
 
-```{r, warning=FALSE, message=FALSE}
-
-df %>% 
-	select(Input.INSTNM, contains("Answer")) %>% 
-	mutate(across(contains("Answer"), as.character)) %>% 
-	pivot_longer(contains("Answer")) %>% 
-	filter(!is.na(value), value != "cannotdetermine") %>%  # treating NA and "cannotdetermine" as the same
-	group_by(Input.INSTNM, name, value) %>% 
-	summarise(n = n()) %>% 
-	mutate(majority_exists = (max(n) > 1) &  ((max(n) / sum(n)) > 0.5)) %>% 
-	summarise(majority_exists = max(majority_exists)) %>% 
-	ungroup() %>% 
-	group_by(name) %>%
-	summarise(`% Majority Exists` = sum(majority_exists)/length(unique(df$Input.INSTNM))) %>% 
-	arrange(desc(`% Majority Exists`)) %>% 
-	kable(digits = 2)
 ```
 
-- We have the most majority consensus on Q1, which also has the most completeness. This could be promising, or it could just be because Q1 is binary.
+So, big picture: 
 
-- The three questions regarding an opt-in policy (default policy, opt-in policy, application of opt-in policy) all had consensus about half the time. The deadline had consensus somewhat less than half the time.
+- We lose about 20% to workers not being able to identify whether a policy is universal. 
+- Of the universal institutions, we can get information on the policy for maybe half of them. 
+- Of the non-universal institutions, we can get information about the choices for most (~75%) of them. 
 
-- The very low consensus on the universal policy is disturbing, and likely indicates worker confusion.
+In total, we can probably reasonably expect to get useful information of some nature for 60-70% of schools. This is all assuming that two out of four concurring workers is sufficient to count answers.  
+
 
 ## Time Spent
 
@@ -230,7 +228,7 @@ Could and did the workers follow the logical flow of the questions? The logical 
 1. The worker marked "yes" for universal. In this case, the worker did not follow the logical flow if they answered any of the questions besides what the universal policy was.
 2. The worker marked "no" for universal. In this case, the worker did not follow the logical flow if they left blank any of the questions besides universal policy or if they answered universal policy.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, include=FALSE}
 # All points for which universal was marked yes
 # In these cases, everything else should be NA except what the policy was
 universal <- df %>%
@@ -249,6 +247,33 @@ notUniversal <- df %>%
 
 notUniversalWrong <- notUniversal %>%
 	filter(is.na(Answer.optinpolicy) | !is.na(Answer.universalpolicy))
+
+# Lengths of the above
+universalC1 <- nrow(universal)
+universalWrongC1 <- nrow(universalWrong)
+notUniversalC1 <- nrow(notUniversal)
+notUniversalWrongC1 <- nrow(notUniversalWrong)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# All points for which universal was marked yes (Means there was NOT a universal policy)
+# In these cases, universal policy should be blank
+universal <- df2 %>%
+	select(contains("Answer.")) %>%
+	filter(Answer.universal == "yes")
+
+# All instances where universal was yes but universal policy was filled in
+universalWrong <- universal %>%
+	filter(!is.na(Answer.universalpolicy))
+
+# All instances where universal was marked no (Means there was a universal policy)
+# In these cases, nothing else should be answered except universal policy
+notUniversal <- df2 %>%
+	select(contains("Answer.")) %>%
+	filter(Answer.universal == "no")
+
+notUniversalWrong <- notUniversal %>%
+	filter(!is.na(Answer.optinpolicy) | is.na(Answer.universalpolicy))
 ```
 
 ```{r, warning=FALSE, message=FALSE, include=FALSE}
@@ -266,7 +291,9 @@ In total, there were `r universalC` surveys where universal was marked as yes, a
 
 Given as percentages, `r round(100 * universalWrongC / universalC, 2)` percent of those that were marked yes were done wrong, and `r round(100 * notUniversalWrongC / notUniversalC, 2)` percent of answers marked no were done wrong. In total, `r round(100 * (universalWrongC + notUniversalWrongC) / (universalC + notUniversalC), 2)` percent of survey responses where the answerer could determine whether or not the policy was universal did not follow the logical flow of the survey.
 
+This is only a slight improvement from before when `r round(100 * (universalWrongC1 + notUniversalWrongC1) / (universalC1 + notUniversalC1), 2)` percent of survey answers failed to follow the logical flow.
 
+<!-- This next part still needs to be updated, I beleive it's Phil's code and I'm not fully sure how it works-->
 We also tested this the following way: 
 ```{r, warning=FALSE, message=FALSE}
 num_conflicts <- df %>% 
@@ -299,11 +326,15 @@ The quantity of responses not following the logical flow of the survey would als
 
 ### Logical flow
 	
+This is what we previously had for improving the logical flow:
+
 Can we reduce the number of questions they have to skip? It's possible this would make the survey easier to follow.
 
 If we do manage to simplify the survey in this way, it might make the logical flow easier to understand. However, it is important to note that the logical flow can also be used as a quality check. If a small number of workers do not follow the instructions, we can guess that they were not paying much attention when answering the questions. Do we need a balance between simplifying the survey and using the flow as a quality check?
 
 For example, if there were some way to automatically make the survey follow the logical flow (only show certain questions depending on the answers to other questions), we can guarantee no one is confused, but we also can no longer tell who was paying close attention when taking the survey.
+
+After the changes to the survey, there was a slight improvement to the workers' ability to follow the logical flow, however not nearly an improvement to the extend we desired.
 	
 ### Universal Policy Language
 
