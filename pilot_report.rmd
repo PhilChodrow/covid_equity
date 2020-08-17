@@ -182,25 +182,61 @@ In total, we can probably reasonably expect to get useful information of some na
 
 ## Time Spent
 
-Can we find suspicious workers based on their work time? The histogram below shows the distribution of work times. 
+Can we find suspicious workers based on their work time? The histogram below shows the distribution of work times from the second pilot. 
 
 ```{r}
-df %>% 
-	ggplot() + 
-	aes(x = WorkTimeInSeconds) + 
+ggplot(df2, aes(x = WorkTimeInSeconds)) + 
 	geom_histogram(bins = 100)
 ```
 
-We can retrieve a list of workers who completed the survey in less than the minimum time as follows:
+
+```{r} 
+# Basic work time statistics from the first pilot
+summary(df$WorkTimeInSeconds)
+
+# Basic work time statistics from the second pilot
+summary(df2$WorkTimeInSeconds)
+```
+
+The work times for the second pilot form a much more normal distribution than the first pilot, and on average, workers spent longer on the second pilot. 
+We can also examine work time in conjunction with confidence and whether there was a universal policy.
+
+```{r}
+data = count(df2, Answer.confidence, WorkTimeInSeconds, Answer.universal)
+
+ggplot(data, aes(x = WorkTimeInSeconds)) +
+	geom_histogram(bins = 100) +
+	labs(title = "Work Time by Confidence Level", 
+			 subtitle = "1 is least confident, 3 is most confident",
+			 x = "Work Time (seconds)", y = "Count") + 
+	facet_wrap(~ Answer.confidence, ncol = 1)
+
+ggplot(data, aes(x = WorkTimeInSeconds)) +
+	geom_histogram(bins = 100) +
+	labs(title = "Work Time by Universal Policy", 
+			 subtitle = "Yes indicates students could choose how to be graded",
+			 x = "Work Time (seconds)", y = "Count") + 
+	facet_wrap(~ Answer.universal, ncol = 1)
+
+ggplot(data, aes(x = WorkTimeInSeconds)) +
+	geom_histogram(bins = 100) +
+	labs(title = "Work Time by Confidence and Universal Policy", 
+			 subtitle = "Yes indicates students could choose how to be graded, 3 is most confident",
+			 x = "Work Time (seconds)", y = "Count") + 
+	facet_grid(Answer.confidence ~ Answer.universal)
+```
+
+
+We can retrieve a list of workers who completed the survey in less than a given minimum time as follows:
 
 ```{r, warning=FALSE, message=FALSE}
 
-min_time <- quantile(df$WorkTimeInSeconds, 0.25)
+min_time <- quantile(df2$WorkTimeInSeconds, 0.05)
 sus_workers <- c()
 
-for(i in 1:nrow(df))
-  {if(df$WorkTimeInSeconds[i] < min_time)
-  {sus_workers[i] <- df$WorkerId[i]}}
+for(i in 1:nrow(df2))
+  {if(df2$WorkTimeInSeconds[i] < min_time)
+  {sus_workers[i] <- df2$WorkerId[i]}}
 
 unique(sus_workers)
 ```
@@ -217,8 +253,6 @@ unique(sus_workers)
 <!-- ``` -->
 
 <!-- - **Follow-up questions**: How many total answers would we lose if we discarded the work of suspicious workers? Also, is there a more systematic way to choose the quantile?  -->
-
-The first priority here is determining how to choose the quantile, and whether we want to choose a quantile or a specific minimum time. Ideally, the histogram would give us an idea of where the minimum should be, but it's somewhat unclear. There is a spike around 45 seconds that could potentially be a good cut off time. Possibly we could identify some workers whose answers seem unreliable, and use their work times as references?
 
 
 ## Control Flow Violations
@@ -293,8 +327,8 @@ Given as percentages, `r round(100 * universalWrongC / universalC, 2)` percent o
 
 This is only a slight improvement from before when `r round(100 * (universalWrongC1 + notUniversalWrongC1) / (universalC1 + notUniversalC1), 2)` percent of survey answers failed to follow the logical flow.
 
-<!-- This next part still needs to be updated, I beleive it's Phil's code and I'm not fully sure how it works-->
-We also tested this the following way: 
+<!-- This next part still needs to be updated, I believe it's Phil's code and I'm not fully sure how it works-->
+<!--We also tested this the following way: 
 ```{r, warning=FALSE, message=FALSE}
 num_conflicts <- df %>% 
 	group_by(Input.INSTNM, WorkerId) %>% 
@@ -303,7 +337,7 @@ num_conflicts <- df %>%
 	summarise(num_conflicts = sum(conflict, na.rm = T))
 
 ```
-There were `r num_conflicts$num_conflicts[1]` instances in which workers answered the the policy was "universal" but proceeded to answer the opt-in policy question as well. 
+There were `r num_conflicts$num_conflicts[1]` instances in which workers answered the the policy was "universal" but proceeded to answer the opt-in policy question as well. -->
 
 
 
