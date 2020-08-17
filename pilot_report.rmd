@@ -191,7 +191,7 @@ Could and did the workers follow the logical flow of the questions? The logical 
 1. The worker marked "yes" for universal. In this case, the worker did not follow the logical flow if they answered any of the questions besides what the universal policy was.
 2. The worker marked "no" for universal. In this case, the worker did not follow the logical flow if they left blank any of the questions besides universal policy or if they answered universal policy.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, include=FALSE}
 # All points for which universal was marked yes
 # In these cases, everything else should be NA except what the policy was
 universal <- df %>%
@@ -210,6 +210,33 @@ notUniversal <- df %>%
 
 notUniversalWrong <- notUniversal %>%
 	filter(is.na(Answer.optinpolicy) | !is.na(Answer.universalpolicy))
+
+# Lengths of the above
+universalC1 <- nrow(universal)
+universalWrongC1 <- nrow(universalWrong)
+notUniversalC1 <- nrow(notUniversal)
+notUniversalWrongC1 <- nrow(notUniversalWrong)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# All points for which universal was marked yes (Means there was NOT a universal policy)
+# In these cases, universal policy should be blank
+universal <- df2 %>%
+	select(contains("Answer.")) %>%
+	filter(Answer.universal == "yes")
+
+# All instances where universal was yes but universal policy was filled in
+universalWrong <- universal %>%
+	filter(!is.na(Answer.universalpolicy))
+
+# All instances where universal was marked no (Means there was a universal policy)
+# In these cases, nothing else should be answered except universal policy
+notUniversal <- df2 %>%
+	select(contains("Answer.")) %>%
+	filter(Answer.universal == "no")
+
+notUniversalWrong <- notUniversal %>%
+	filter(!is.na(Answer.optinpolicy) | is.na(Answer.universalpolicy))
 ```
 
 ```{r, warning=FALSE, message=FALSE, include=FALSE}
@@ -224,7 +251,9 @@ In total, there were `r universalC` surveys where universal was marked as yes, a
 
 Given as percentages, `r round(100 * universalWrongC / universalC, 2)` percent of those that were marked yes were done wrong, and `r round(100 * notUniversalWrongC / notUniversalC, 2)` percent of answers marked no were done wrong. In total, `r round(100 * (universalWrongC + notUniversalWrongC) / (universalC + notUniversalC), 2)` percent of survey responses where the answerer could determine whether or not the policy was universal did not follow the logical flow of the survey.
 
+This is only a slight improvement from before when `r round(100 * (universalWrongC1 + notUniversalWrongC1) / (universalC1 + notUniversalC1), 2)` percent of survey answers failed to follow the logical flow.
 
+<!-- This next part still needs to be updated, I beleive it's Phil's code and I'm not fully sure how it works-->
 We also tested this the following way: 
 ```{r, warning=FALSE, message=FALSE}
 num_conflicts <- df %>% 
@@ -257,11 +286,15 @@ The quantity of responses not following the logical flow of the survey would als
 
 ### Logical flow
 	
+This is what we previously had for improving the logical flow:
+
 Can we reduce the number of questions they have to skip? It's possible this would make the survey easier to follow.
 
 If we do manage to simplify the survey in this way, it might make the logical flow easier to understand. However, it is important to note that the logical flow can also be used as a quality check. If a small number of workers do not follow the instructions, we can guess that they were not paying much attention when answering the questions. Do we need a balance between simplifying the survey and using the flow as a quality check?
 
 For example, if there were some way to automatically make the survey follow the logical flow (only show certain questions depending on the answers to other questions), we can guarantee no one is confused, but we also can no longer tell who was paying close attention when taking the survey.
+
+After the changes to the survey, there was a slight improvement to the workers' ability to follow the logical flow, however not nearly an improvement to the extend we desired.
 	
 ### Universal Policy Language
 
